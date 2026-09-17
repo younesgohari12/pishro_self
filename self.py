@@ -368,6 +368,11 @@ async def run_self(session_path, session_string):
             uninstall_premium_resend(client)
             uninstall_premium_emoji_converter(client)
             try:
+                from services.presence_manager import uninstall_presence_manager
+                uninstall_presence_manager(client)
+            except Exception:  # noqa: BLE001 - پاک‌سازی هرگز shutdown را نمی‌شکند
+                pass
+            try:
                 await client.disconnect()
             except Exception:
                 pass
@@ -450,8 +455,13 @@ async def _run_connected_self(client, me, uid, sid):
     register_deleted_message_handlers(client, uid)
     register_message_font_handler(client, uid)
     register_copy_protected_handlers(client, uid)
-    # 💤 Away Message — پاسخ خودکار خصوصی + ریست با فعالیت مالک
+    # 💤 Away Message — پاسخ خودکار خصوصی + ریست فقط دستی/سشن جدید
     away_service.register_away_handlers(client, uid)
+    # 🛡 Presence Manager — اکانت هنگام عدم حضور آفلاین می‌ماند:
+    #    بدون typing action، بدون read acknowledge، بدون update status آنلاین؛
+    #    بعد از هر ارسال، وضعیت آفلاین دوباره اعمال می‌شود (بدون loop).
+    from services.presence_manager import install_presence_manager
+    install_presence_manager(client, uid)
 
     # ========================================
     # 📥 پیام‌های ورودی (سکوت + حالت دشمن)
@@ -532,18 +542,21 @@ async def _run_connected_self(client, me, uid, sid):
                 return
             settings = away_service.get_settings(uid)
             if not args:
-                count = len(settings['away_sent_users'])
+                count = len(settings['away_sent_chats'])
                 state = '🟢 روشن' if settings['away_enabled'] else '🔴 خاموش'
                 await client.send_message(
                     event.chat_id,
                     '💤 **پیام عدم حضور**\n\n'
                     f'وضعیت: {state}\n'
                     f'متن: «{settings["away_text"]}»\n'
-                    f'پیام‌گرفته‌ها (تا ریست بعدی): {count}\n\n'
+                    f'لیست چت‌های پاسخ داده شده: {count}\n\n'
+                    '• هر چت خصوصی فقط یک بار پاسخ می‌گیرد\n'
+                    '• اکانت آفلاین می‌ماند (بدون typing / read / status)\n\n'
                     'دستورها:\n'
                     '• `.عدم_حضور روشن` / `.عدم_حضور خاموش`\n'
                     '• `.متن_عدم_حضور <متن جدید>`\n'
-                    '• `.away reset` / `.عدم_حضور ریست` — ریست لیست ارسال‌شده‌ها',
+                    '• `.away reset` / `.عدم_حضور ریست` — پاک کردن لیست چت‌ها\n'
+                    '• ریست خودکار فقط با شروع مجدد سلف',
                     parse_mode='md',
                 )
                 return
@@ -552,12 +565,12 @@ async def _run_connected_self(client, me, uid, sid):
             if action in ('on', 'روشن'):
                 away_service.set_enabled(uid, True)
                 await client.send_message(event.chat_id,
-                                          '✅ پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
+                                          '✅ پیام عدم حضور روشن شد؛ هر چت خصوصی فقط یک بار پاسخ می‌گیرد و لیست از نو شروع شد. اکانت آفلاین می‌ماند.',
                                           parse_mode=None)
             elif action in ('off', 'خاموش'):
                 away_service.set_enabled(uid, False)
                 await client.send_message(event.chat_id,
-                                          '⛔️ پیام عدم حضور خاموش شد.',
+                                          '⛔️ پیام عدم حضور خاموش شد؛ لیست چت‌های پاسخ داده شده پاک شد.',
                                           parse_mode=None)
             elif action in ('text', 'متن'):
                 if not rest.strip():
@@ -576,10 +589,10 @@ async def _run_connected_self(client, me, uid, sid):
                                           f'✅ متن پیام عدم حضور ذخیره شد.\n\n💤 {saved}',
                                           parse_mode=None)
             elif action in ('reset', 'ریست'):
-                count = away_service.reset_sent_users(uid)
+                count = away_service.reset_sent_chats(uid)
                 await client.send_message(
                     event.chat_id,
-                    f'🧹 لیست پیام عدم حضور ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
+                    f'🧹 لیست چت‌های پاسخ داده شده پاک شد ({count} چت)؛ برای همه دوباره یک بار پیام می‌رود.',
                     parse_mode=None)
             else:
                 await client.send_message(
@@ -603,13 +616,16 @@ async def _run_connected_self(client, me, uid, sid):
             settings = away_service.get_settings(uid)
             if not args:
                 state = '🟢 روشن' if settings['away_enabled'] else '🔴 خاموش'
+                count = len(settings['away_sent_chats'])
                 await client.send_message(
                     event.chat_id,
                     f'💤 **پیام عدم حضور**\n\nوضعیت: {state}\n'
-                    f'متن: «{settings["away_text"]}»\n\n'
+                    f'متن: «{settings["away_text"]}»\n'
+                    f'لیست چت‌های پاسخ داده شده: {count}\n\n'
                     'دستورها:\n'
                     '• `.عدم_حضور روشن` / `.عدم_حضور خاموش`\n'
-                    '• `.متن_عدم_حضور <متن جدید>`',
+                    '• `.متن_عدم_حضور <متن جدید>`\n'
+                    '• `.عدم_حضور ریست` — پاک کردن لیست چت‌ها',
                     parse_mode='md')
                 return
             action, _, rest = args.partition(' ')
@@ -618,18 +634,18 @@ async def _run_connected_self(client, me, uid, sid):
                 away_service.set_enabled(uid, True)
                 await client.send_message(
                     event.chat_id,
-                    '✅ پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
+                    '✅ پیام عدم حضور روشن شد؛ هر چت خصوصی فقط یک بار پاسخ می‌گیرد و لیست از نو شروع شد. اکانت آفلاین می‌ماند.',
                     parse_mode=None)
             elif action == 'خاموش':
                 away_service.set_enabled(uid, False)
                 await client.send_message(event.chat_id,
-                                          '⛔️ پیام عدم حضور خاموش شد.',
+                                          '⛔️ پیام عدم حضور خاموش شد؛ لیست چت‌های پاسخ داده شده پاک شد.',
                                           parse_mode=None)
             elif action == 'ریست':
-                count = away_service.reset_sent_users(uid)
+                count = away_service.reset_sent_chats(uid)
                 await client.send_message(
                     event.chat_id,
-                    f'🧹 لیست پیام عدم حضور ریست شد ({count} کاربر).',
+                    f'🧹 لیست چت‌های پاسخ داده شده پاک شد ({count} چت).',
                     parse_mode=None)
             else:
                 await client.send_message(

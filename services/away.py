@@ -1,33 +1,43 @@
-"""پیام عدم حضور — پاسخ خودکار خصوصی هنگام آفلاین بودن مالک.
+"""پیام عدم حضور — پاسخ خودکار خصوصی هنگام آفلاین بودن مالک (v0.09.14).
 
-رفتار (مطابق spec مالک):
+رفتار (مطابق spec جدید مالک):
 - فقط چت خصوصی (Private)؛ گروه/کانال هرگز. بات‌ها و پیام‌های سرویس هرگز.
-- برای هر کاربر فقط «یک بار» پیام می‌رود تا زمانی که:
-  * مالک دوباره آنلاین شود (هر پیام خروجی مالک = علامت برگشت) → لیست ریست، یا
-  * ریست دستی (.away reset / پنل)، یا
-  * سقف زمانی AWAY_RESET_HOURS (اختیاری؛ 0 = غیرفعال) گذشته باشد.
-- متن و روشن/خاموش در دیتابیس هر حساب ذخیره می‌شود:
-  away_enabled / away_text / away_sent_users
-- کنترل: دستورهای .عدم_حضور روشن/خاموش، .متن_عدم_حضور، .away و پنل (.پنل → 💤 پیام عدم حضور).
+- محدودیت «per-chat» است نه global: بعد از هر آفلاین شدن، در هر چت فقط
+  «یک بار» پیام عدم حضور ارسال می‌شود:
+      Chat A: سلام  → یک پیام عدم حضور
+      Chat A: خوبی؟ → هیچ پیامی ارسال نمی‌شود
+      Chat B: سلام  → یک پیام عدم حضور (مدیریت جدا از Chat A)
+- دیتابیس (ساختار درخواستی مالک):
+      away_enabled / away_text / away_active_session / away_sent_chats
+      away_sent_chats = { chat_id: timestamp }
+- ریست لیست فقط و فقط با:
+      * خاموش کردن دستی (.عدم_حضور خاموش / پنل)
+      * روشن کردن دوباره (چرخه خاموش/روشن = شروع دوره عدم حضور تازه)
+      * «پاک کردن لیست» دستی (.عدم_حضور ریست / پنل)
+      * شروع یک Session جدید واقعی (restart سلف)
+  ❌ هیچ پیام خروجی، send_message، event outgoing یا typing لیست را ریست
+     نمی‌کند (این رفتار v0.09.13 باعث loop و اسپم می‌شد — حذف شد).
+- کنترل: .عدم_حضور روشن/خاموش/ریست، .متن_عدم_حضور، .away و پنل (.پنل → 💤 پیام عدم حضور).
 - پاسخ از client.send_message عبور می‌کند؛ یعنی Unified Pipeline و
-  Premium Emoji Resend روی آن فعال‌اند و هیچ ارسال مستقیمی وجود ندارد.
-- حلقه‌بندی غیرممکن است: پاسخ‌های Away خودشان در لیست چشم‌پوشی می‌روند و
-  هرگز فعال‌ساز ریست نمی‌شوند؛ به بات‌ها پاسخ نمی‌دهیم.
+  Premium Emoji Resend روی آن فعال‌اند و Presence Manager بعد از ارسال،
+  اکانت را دوباره Offline می‌کند (ارسال پاسخ Away باعث Online شدن نمی‌شود).
+- حلقه‌بندی غیرممکن است: هیچ مسیر ریستی به پیام‌های خروجی وصل نیست و
+  به بات‌ها پاسخ نمی‌دهیم.
 
-لاگ استاندارد:
-    [AWAY]
-    user: 123456789
-    sent: True
-    reason: first_message
+لاگ استاندارد فارسی:
+    [پیام عدم حضور]
+    شناسه چت: 123456789
+    وضعیت: روشن
+    نتیجه: ارسال شد
 """
 from __future__ import annotations
 
 import threading
 import time
+from uuid import uuid4
 
 from telethon import events
 
-import config
 import db
 from services import telegram_logger as tlog
 
@@ -40,9 +50,6 @@ _TEXT_CAPTURE_LOCK = threading.RLock()
 _TEXT_CAPTURE: dict[int, float] = {}
 _TEXT_CAPTURE_TTL_SECONDS = 300
 
-# کلیدهای چشم‌پوشی پاسخ‌های خود Away: (chat_id, message_id)
-IGNORE_LIMIT = 512
-
 
 # ================================================== تنظیمات (دیتابیس)
 def get_settings(uid) -> dict:
@@ -51,12 +58,22 @@ def get_settings(uid) -> dict:
     return {
         'away_enabled': bool(settings.get('away_enabled', False)),
         'away_text': settings.get('away_text') or DEFAULT_AWAY_TEXT,
-        'away_sent_users': dict(settings.get('away_sent_users') or {}),
+        'away_sent_chats': dict(settings.get('away_sent_chats') or {}),
+        'away_active_session': str(settings.get('away_active_session') or ''),
     }
 
 
 def set_enabled(uid, enabled: bool) -> None:
-    db.update_user_settings(int(uid), {'away_enabled': bool(enabled)})
+    """روشن/خاموش کردن Away.
+
+    هر تغییر وضعیت = شروع یک دوره جدید عدم حضور → لیست چت‌های پاسخ داده
+    شده پاک می‌شود (مطابق spec: خاموش/روشن کردن لیست را reset می‌کند).
+    """
+    uid = int(uid)
+    cleared = reset_sent_chats(uid)
+    db.update_user_settings(uid, {'away_enabled': bool(enabled)})
+    state = 'روشن' if enabled else 'خاموش'
+    _log('-', state, f'لیست ریست شد ({cleared} چت)', telegram=False)
 
 
 def set_text(uid, text: str) -> str:
@@ -70,25 +87,43 @@ def set_text(uid, text: str) -> str:
     return cleaned
 
 
-def reset_sent_users(uid) -> int:
-    """پاک‌سازی لیست «پیام گرفته‌ها»؛ تعداد پاک‌شده برمی‌گردد."""
-    current = db.get_user_settings(int(uid)).get('away_sent_users') or {}
-    db.update_user_settings(int(uid), {'away_sent_users': {}})
+def reset_sent_chats(uid) -> int:
+    """پاک‌سازی «لیست چت‌های پاسخ داده شده»؛ تعداد پاک‌شده برمی‌گردد."""
+    current = db.get_user_settings(int(uid)).get('away_sent_chats') or {}
+    db.update_user_settings(int(uid), {'away_sent_chats': {}})
     return len(current)
 
 
-def _ttl_seconds() -> float:
-    try:
-        hours = float(getattr(config, 'AWAY_RESET_HOURS', 0) or 0)
-    except (TypeError, ValueError):
-        hours = 0.0
-    return hours * 3600.0 if hours > 0 else 0.0
+# سازگاری نام قدیمی (v0.09.13) — پنل/دستورها به نام جدید مهاجرت کردند
+def reset_sent_users(uid) -> int:
+    return reset_sent_chats(uid)
 
 
-# ================================================== لاگ
-def _log(user, sent, reason, *, telegram=True):
+def start_session(uid) -> int:
+    """شروع یک Session جدید واقعی → لیست چت‌های پاسخ داده شده پاک می‌شود.
+
+    شناسه سشن در ``away_active_session`` ذخیره می‌شود. تعداد چت‌های پاک‌شده
+    برمی‌گردد. این تابع هرگز از پیام‌ها فراخوانی نمی‌شود؛ فقط از نصب هندلرها
+    (restart سلف = سشن واقعی جدید).
+    """
+    uid = int(uid)
+    settings = db.get_user_settings(uid)
+    previous = str(settings.get('away_active_session') or '')
+    sent_chats = dict(settings.get('away_sent_chats') or {})
+    token = uuid4().hex
+    db.update_user_settings(uid, {'away_active_session': token,
+                                  'away_sent_chats': {}})
+    if sent_chats or previous:
+        _log('-', 'خاموش', f'سشن جدید شروع شد؛ لیست ریست شد '
+                            f'({len(sent_chats)} چت)', telegram=False)
+    return len(sent_chats)
+
+
+# ================================================== لاگ فارسی
+def _log(chat_id, status, result, *, telegram=True):
     try:
-        block = tlog.format_away_debug(user=user, sent=sent, reason=reason)
+        block = tlog.format_away_debug(chat_id=chat_id, status=status,
+                                       result=result)
         tlog.send_away_debug(block, telegram=telegram)
     except Exception:  # noqa: BLE001 - لاگ هرگز مسیر را نمی‌شکند
         pass
@@ -124,23 +159,17 @@ def consume_text_capture(uid) -> bool:
         return True
 
 
-# ================================================== منطق اصلی
-def _already_notified(settings, user_id) -> bool:
-    sent_users = settings['away_sent_users']
-    last = sent_users.get(str(int(user_id)))
-    if last is None:
-        return False
-    ttl = _ttl_seconds()
-    if ttl and (time.time() - float(last)) > ttl:
-        return False  # سقف زمانی گذشته؛ اجازه ارسال دوباره
-    return True
+# ================================================== منطق اصلی (per-chat)
+def _already_notified(settings, chat_id) -> bool:
+    """آیا این «چت» بعد از آخرین آفلاین شدن، پیام عدم حضور گرفته است؟"""
+    return str(int(chat_id)) in settings['away_sent_chats']
 
 
-def _mark_notified(uid, user_id) -> None:
+def _mark_notified(uid, chat_id) -> None:
     settings = db.get_user_settings(int(uid))
-    sent_users = dict(settings.get('away_sent_users') or {})
-    sent_users[str(int(user_id))] = time.time()
-    db.update_user_settings(int(uid), {'away_sent_users': sent_users})
+    sent_chats = dict(settings.get('away_sent_chats') or {})
+    sent_chats[str(int(chat_id))] = time.time()
+    db.update_user_settings(int(uid), {'away_sent_chats': sent_chats})
 
 
 def _is_private_incoming(event, message) -> bool:
@@ -158,7 +187,7 @@ async def _handle_incoming(client, uid, event) -> None:
         return
     settings = get_settings(uid)
     if not settings['away_enabled']:
-        return
+        return  # Away خاموش: هیچ بررسی/لاگی لازم نیست
     sender_id = getattr(message, 'sender_id', None)
     if sender_id is None:
         return
@@ -173,72 +202,30 @@ async def _handle_incoming(client, uid, event) -> None:
     if chat_id in user_settings.get('muted_chats', []) or \
             chat_id in user_settings.get('enemy_chats', []):
         return  # چت‌های ساکت/دشمن: هیچ پاسخ خودکاری ندارند
-    if _already_notified(settings, sender_id):
-        _log(sender_id, False, 'already_notified', telegram=False)
-        return
-    expired = False
-    if _ttl_seconds() and str(int(sender_id)) in settings['away_sent_users']:
-        expired = True  # فقط وقتی TTL گذاشته شده این مسیر معنا دارد
+    if _already_notified(settings, chat_id):
+        _log(chat_id, 'روشن', 'قبلاً ارسال شده', telegram=False)
+        return  # در این چت فقط یک بار؛ پیام‌های بعدی هیچ پاسخی نمی‌گیرند
     try:
-        sent = await client.send_message(
+        await client.send_message(
             chat_id, settings['away_text'], parse_mode=None)
     except Exception as exc:  # noqa: BLE001 - شکست پاسخ هرگز crash نیست
-        _log(sender_id, False, f'send_failed ({type(exc).__name__})')
+        _log(chat_id, 'روشن', f'ارسال ناموفق ({type(exc).__name__})')
         return
-    # پاسخ Away هرگز نباید خودش نشانه «برگشت مالک» شود → چشم‌پوشی
-    _ignore_message(client, chat_id, getattr(sent, 'id', None))
-    _mark_notified(uid, sender_id)
-    _log(sender_id, True, 'ttl_expired_resend' if expired else 'first_message')
-
-
-def _ignore_message(client, chat_id, message_id) -> None:
-    if message_id is None:
-        return
-    ignore = getattr(client, '_away_ignore', None)
-    if ignore is None:
-        ignore = set()
-        client._away_ignore = ignore
-    key = (chat_id, int(message_id))
-    ignore.add(key)
-    while len(ignore) > IGNORE_LIMIT:
-        ignore.pop()
-
-
-def _is_ignored(client, chat_id, message_id) -> bool:
-    ignore = getattr(client, '_away_ignore', None)
-    if not ignore:
-        return False
-    key = (chat_id, int(message_id))
-    if key in ignore:
-        ignore.discard(key)  # یک‌بار مصرف؛ حافظه تمیز می‌ماند
-        return True
-    return False
-
-
-async def _handle_outgoing(client, uid, event) -> None:
-    """هر پیام خروجی مالک = برگشت آنلاین → ریست لیست (اگر چیزی برای ریست)."""
-    message = getattr(event, 'message', None)
-    if message is None or getattr(message, 'action', None) is not None:
-        return
-    if _is_ignored(client, event.chat_id, getattr(message, 'id', None)):
-        return  # پاسخ خود Away؛ نشانه آنلاین بودن نیست
-    settings = db.get_user_settings(int(uid))
-    if not settings.get('away_enabled'):
-        return
-    sent_users = settings.get('away_sent_users') or {}
-    if not sent_users:
-        return  # چیزی برای ریست نیست؛ بدون دوباره‌نویسی دیتابیس
-    db.update_user_settings(int(uid), {'away_sent_users': {}})
-    _log('*', False, f'owner_online_reset ({len(sent_users)} users cleared)',
-         telegram=False)
+    _mark_notified(uid, chat_id)
+    _log(chat_id, 'روشن', 'ارسال شد')
 
 
 # ================================================== نصب هندلرها
 def register_away_handlers(client, uid) -> None:
-    """نصب هندلرهای Away فقط روی کلاینت Self (هرگز کلاینت بات)."""
+    """نصب هندلرهای Away فقط روی کلاینت Self (هرگز کلاینت بات).
+
+    هر نصب = شروع یک سشن واقعی جدید → لیست چت‌های پاسخ داده شده پاک می‌شود
+    (ریست با پیام خروجی مالک وجود ندارد؛ این تنها ریست خودکار مجاز است).
+    """
     if getattr(client, '_away_handlers_installed', False):
         return
     uid = int(uid)
+    start_session(uid)
 
     @client.on(events.NewMessage(outgoing=True))
     async def _away_text_input_handler(event):
@@ -260,8 +247,6 @@ def register_away_handlers(client, uid) -> None:
                 await client.send_message(
                     event.chat_id, f'❌ {exc}', parse_mode=None)
                 return
-            _ignore_message(client, event.chat_id,
-                            getattr(event, 'id', None))
             try:
                 await event.delete()
             except Exception:  # noqa: BLE001
@@ -270,8 +255,6 @@ def register_away_handlers(client, uid) -> None:
                 event.chat_id,
                 '✅ متن پیام عدم حضور ذخیره شد.\n\n💤 ' + saved_text,
                 parse_mode=None)
-            _ignore_message(client, event.chat_id,
-                            getattr(confirm, 'id', None))
             raise events.StopPropagation
         except events.StopPropagation:
             raise
@@ -283,13 +266,6 @@ def register_away_handlers(client, uid) -> None:
         try:
             await _handle_incoming(client, uid, event)
         except Exception:  # noqa: BLE001 - هیچ خطایی پیام‌رسانی را نمی‌شکند
-            pass
-
-    @client.on(events.NewMessage(outgoing=True))
-    async def _away_outgoing_handler(event):
-        try:
-            await _handle_outgoing(client, uid, event)
-        except Exception:  # noqa: BLE001
             pass
 
     client._away_handlers_installed = True

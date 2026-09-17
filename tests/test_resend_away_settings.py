@@ -25,16 +25,21 @@ def test_default_settings_contain_new_keys():
     assert settings['premium_emoji_resend'] is None  # لمس‌نشده
     assert settings['away_enabled'] is False
     assert settings['away_text'] == db.DEFAULT_AWAY_TEXT
-    assert settings['away_sent_users'] == {}
+    # v0.09.14 — ساختار درخواستی مالک: per-chat + سشن
+    assert settings['away_sent_chats'] == {}
+    assert 'away_active_session' in settings
+    assert 'away_sent_users' in settings  # legacy فقط برای سازگاری داده قدیمی
 
 
-def test_normalize_away_sent_users():
+def test_normalize_away_sent_users_and_chats():
     normalized = db._normalize_settings({
         'away_sent_users': {'100': 111.5, 'bad': 'x', 200: '222'},
+        'away_sent_chats': {'-100999': 333.5, 400: '444', 'oops': None},
         'away_text': '  متن  ',
         'premium_emoji_resend': 0,
     })
     assert normalized['away_sent_users'] == {'100': 111.5, '200': 222.0}
+    assert normalized['away_sent_chats'] == {'-100999': 333.5, '400': 444.0}
     assert normalized['away_text'] == 'متن'
     assert normalized['premium_emoji_resend'] is False
 
@@ -49,17 +54,17 @@ def test_roundtrip_persist_new_keys():
         'premium_emoji_resend': True,
         'away_enabled': True,
         'away_text': 'متن من',
-        'away_sent_users': {'555': 123.0},
+        'away_sent_chats': {'555': 123.0},
     })
     settings = db.get_user_settings(UID)
     assert settings['premium_emoji_resend'] is True
     assert settings['away_enabled'] is True
     assert settings['away_text'] == 'متن من'
-    assert settings['away_sent_users'] == {'555': 123.0}
+    assert settings['away_sent_chats'] == {'555': 123.0}
     # پاک‌سازی برای تست‌های دیگر
     db.update_user_settings(UID, {
         'premium_emoji_resend': None, 'away_enabled': False,
-        'away_text': db.DEFAULT_AWAY_TEXT, 'away_sent_users': {},
+        'away_text': db.DEFAULT_AWAY_TEXT, 'away_sent_chats': {},
     })
 
 
@@ -102,8 +107,9 @@ def test_away_menu_builder():
     flat = [str(b.text) for row in buttons for b in row]
     assert any('روشن کردن' in t or 'خاموش کردن' in t for t in flat)
     assert any('تغییر متن' in t for t in flat)
-    assert any('ریست' in t for t in flat)
+    assert any('پاک کردن لیست' in t for t in flat)
     assert 'پیام عدم حضور' in text
+    assert 'لیست چت‌های پاسخ داده شده' in text
     assert db.DEFAULT_AWAY_TEXT[:30] in text or 'متن فعلی' in text
 
 
@@ -127,6 +133,7 @@ def test_resend_mode_config_updates():
 def test_config_flags_exist():
     for key in ('PREMIUM_EMOJI_RESEND_MODE', 'PREMIUM_EMOJI_RESEND_DEBUG',
                 'AWAY_DEBUG', 'AWAY_LOG_LEVEL', 'STATE_DEBUG',
+                'PRESENCE_DEBUG', 'PRESENCE_LOG_LEVEL',
                 'AWAY_RESET_HOURS'):
         assert hasattr(config, key), key
 

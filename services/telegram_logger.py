@@ -202,7 +202,8 @@ _MIN_INTERVALS = {
     'custom_debug': 3.0,    # [CustomEmoji] (سپرده مستقل تا بلوک rich سرکوب نشود)
     'resend_debug': 3.0,    # [PremiumResend] (سپرده مستقل)
     'premium_check': 2.0,   # [PREMIUM_CHECK] (بررسی سرور قبل از تصمیم Resend)
-    'away': 3.0,            # [AWAY]
+    'away': 3.0,            # [پیام عدم حضور]
+    'presence': 3.0,        # [مدیریت وضعیت]
     'state': 3.0,           # [STATE]
     'generic': 30.0,        # send_log/error/warning عمومی
 }
@@ -386,19 +387,40 @@ def format_premium_resend_debug(*, chat, message_id, deleted, resent,
     return '\n'.join(lines)
 
 
-def format_away_debug(*, user, sent, reason):
-    """بلوک استاندارد [AWAY] مطابق spec مالک:
+def format_away_debug(*, chat_id, status, result):
+    """بلوک استاندارد [پیام عدم حضور] مطابق spec مالک:
 
-        [AWAY]
-        user: 123456789
-        sent: True
-        reason: first_message
+        [پیام عدم حضور]
+        شناسه چت: 123456789
+        وضعیت: روشن
+        نتیجه: ارسال شد
+
+    ``نتیجه`` یکی از: ارسال شد / قبلاً ارسال شده / ارسال ناموفق (...)
     """
     return (
-        '[AWAY]\n'
-        f'user: {user}\n'
-        f'sent: {bool(sent)}\n'
-        f'reason: {reason}'
+        '[پیام عدم حضور]\n'
+        f'شناسه چت: {chat_id}\n'
+        f'وضعیت: {status}\n'
+        f'نتیجه: {result}'
+    )
+
+
+def format_presence_debug(*, trigger, source, action):
+    """بلوک استاندارد [مدیریت وضعیت] مطابق spec مالک:
+
+        [مدیریت وضعیت]
+        Online Trigger: send_message
+        منبع: send_message
+        اقدام: اجازه شد؛ بازگردانی آفلاین زمان‌بندی شد
+
+    ``trigger``: send_message / typing / read / status_online
+    ``منبع``: send_message / typing / read / manual
+    """
+    return (
+        '[مدیریت وضعیت]\n'
+        f'Online Trigger: {trigger}\n'
+        f'منبع: {source}\n'
+        f'اقدام: {action}'
     )
 
 
@@ -490,7 +512,7 @@ def send_premium_resend_debug(block_text, *, chat_id=None):
 
 
 def send_away_debug(block_text, *, chat_id=None, telegram=True):
-    """بلوک [AWAY] — لاگ محلی همیشه؛ تلگرام با پرچم AWAY_DEBUG + کانال AWAY.
+    """بلوک [پیام عدم حضور] — لاگ محلی همیشه؛ تلگرام با پرچم AWAY_DEBUG.
 
     telegram=False فقط لاگ محلی (برای رویدادهای پرتکرار مثل suppress).
     """
@@ -508,6 +530,28 @@ def send_away_debug(block_text, *, chat_id=None, telegram=True):
     if not _anti_spam_ok('away', time.monotonic()):
         return False
     _enqueue(text + _suppressed_suffix('away'), _chat_ids(chat_id))
+    return True
+
+
+def send_presence_debug(block_text, *, chat_id=None, telegram=True):
+    """بلوک [مدیریت وضعیت] — لاگ محلی همیشه؛ تلگرام با پرچم PRESENCE_DEBUG.
+
+    telegram=False فقط لاگ محلی (برای رویدادهای پرتکرار مثل بازگردانی آفلاین).
+    """
+    text = redact(block_text)
+    _system_file_log.info('%s', text)
+    if not telegram:
+        return False
+    if not getattr(config, 'PRESENCE_DEBUG', True):
+        return False
+    channel = getattr(config, 'PRESENCE_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('presence', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('presence'), _chat_ids(chat_id))
     return True
 
 

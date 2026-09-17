@@ -236,27 +236,32 @@ def premium_resend_effective(uid):
 
 
 def build_away_menu(uid):
-    """صفحه پنل Away Message — وضعیت، متن فعلی و کنترل‌ها."""
+    """صفحه پنل پیام عدم حضور — وضعیت، متن، لیست چت‌های پاسخ داده شده."""
     settings = away_service.get_settings(uid)
     enabled = settings['away_enabled']
     preview = settings['away_text']
     if len(preview) > 120:
         preview = preview[:120] + '…'
-    notified = len(settings['away_sent_users'])
+    sent_chats = list((settings.get('away_sent_chats') or {}).keys())
+    notified = len(sent_chats)
+    preview_chats = ', '.join(sent_chats[:8]) + ('…' if notified > 8 else '')
     text = (
         "💤 **پیام عدم حضور**\n\n"
         f"وضعیت: {'🟢 روشن' if enabled else '🔴 خاموش'}\n"
         f"متن فعلی:\n«{preview}»\n\n"
-        f"کاربرانی که پیام گرفته‌اند: **{notified}**\n\n"
-        "این پاسخ فقط در **چت خصوصی** و برای هر کاربر **یک بار** ارسال می‌شود؛\n"
-        "با اولین پیام خودت (فعالیت) لیست به‌صورت خودکار ریست می‌شود."
+        f"لیست چت‌های پاسخ داده شده: **{notified}**\n"
+        f"«{preview_chats or '—'}»\n\n"
+        "• این پاسخ فقط در **چت خصوصی** و برای هر چت **یک بار** ارسال می‌شود.\n"
+        "• اکانت آفلاین می‌ماند: بدون typing، بدون read، بدون status.\n"
+        "• لیست فقط با خاموش/روشن کردن، «پاک کردن لیست» یا شروع مجدد سلف ریست "
+        "می‌شود؛ پیام‌های خروجی هرگز لیست را ریست نمی‌کنند."
     )
     buttons = [
         [ui.inline_button(
             '🔴 خاموش کردن' if enabled else '🟢 روشن کردن',
             b"away_toggle", "danger" if enabled else "success")],
         [ui.inline_button("✏️ تغییر متن", b"away_text_change", "primary")],
-        [ui.inline_button("🧹 ریست لیست ارسال‌شده‌ها", b"away_reset", "secondary")],
+        [ui.inline_button("🧹 پاک کردن لیست", b"away_reset", "secondary")],
         [ui.inline_button("↩️ بازگشت", b"back_main", "secondary")],
     ]
     return text, buttons
@@ -734,8 +739,8 @@ async def run_inline():
                 settings = away_service.get_settings(uid)
                 away_service.set_enabled(uid, not settings['away_enabled'])
                 await event.answer(
-                    '💤 پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و یک بار برای هر کاربر.'
-                    if not settings['away_enabled'] else '💤 پیام عدم حضور خاموش شد.',
+                    '💤 پیام عدم حضور روشن شد؛ هر چت خصوصی فقط یک بار پاسخ می‌گیرد و اکانت آفلاین می‌ماند.'
+                    if not settings['away_enabled'] else '💤 پیام عدم حضور خاموش شد؛ لیست چت‌ها پاک شد.',
                     alert=True)
                 text, buttons = build_away_menu(uid)
                 await event.edit(text, buttons=buttons, parse_mode='md')
@@ -755,9 +760,9 @@ async def run_inline():
                 text, buttons = build_away_menu(uid)
                 await event.edit(text, buttons=buttons, parse_mode='md')
             elif d == "away_reset":
-                count = away_service.reset_sent_users(uid)
+                count = away_service.reset_sent_chats(uid)
                 await event.answer(
-                    f'🧹 لیست ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
+                    f'🧹 لیست چت‌های پاسخ داده شده پاک شد ({count} چت)؛ برای همه دوباره یک بار پیام می‌رود.',
                     alert=True)
                 text, buttons = build_away_menu(uid)
                 await event.edit(text, buttons=buttons, parse_mode='md')

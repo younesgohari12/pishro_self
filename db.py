@@ -44,7 +44,12 @@ DEFAULT_SETTINGS = {
     # 💤 Away Message — پاسخ خودکار خصوصی هنگام آفلاین بودن
     'away_enabled': False,
     'away_text': DEFAULT_AWAY_TEXT,
-    # شناسه کاربران خصوصی که پیام Away گرفته‌اند → timestamp آخرین ارسال
+    # شناسه چت‌های خصوصی که پیام Away گرفته‌اند → timestamp آخرین ارسال
+    # (per-chat؛ v0.09.14 — ساختار درخواستی مالک away_sent_chats)
+    'away_sent_chats': {},
+    # شناسه سشن واقعی جاری؛ شروع سشن جدید لیست چت‌های پاسخ داده شده را پاک می‌کند
+    'away_active_session': '',
+    # (legacy v0.09.13) شناسه کاربران — فقط برای سازگاری داده‌های قدیمی
     'away_sent_users': {},
     'muted_chats': [],
     'enemy_chats': [],
@@ -239,6 +244,20 @@ def _normalize_settings(data):
         except (TypeError, ValueError):
             continue
     d['away_sent_users'] = cleaned_sent_users
+    sent_chats = d.get('away_sent_chats', {})
+    if not isinstance(sent_chats, dict):
+        sent_chats = {}
+    cleaned_sent_chats = {}
+    for key, value in list(sent_chats.items()):
+        try:
+            cleaned_sent_chats[str(int(key))] = float(value)
+        except (TypeError, ValueError):
+            continue
+    d['away_sent_chats'] = cleaned_sent_chats
+    session = d.get('away_active_session', '')
+    if not isinstance(session, str):
+        session = ''
+    d['away_active_session'] = session.strip()[:64]
     font_style = str(d.get('message_font_style', 'bold') or 'bold').strip().lower()
     if font_style not in {'bold', 'italic', 'bold_italic', 'strike', 'underline', 'monospace'}:
         font_style = 'bold'
