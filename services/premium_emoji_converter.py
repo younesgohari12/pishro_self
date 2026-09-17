@@ -29,21 +29,25 @@ import inspect
 import random
 import re
 import time
+import traceback
 from contextvars import ContextVar
 from functools import wraps
 
 import config
-from telethon import errors, utils
+from telethon import errors, events, functions, utils
 from telethon.tl import types
 from telethon.tl.types import Message, MessageEntityCustomEmoji
 
 from services import custom_emoji_service as custom
+from services import telegram_logger as tlog
 from premium_emoji_mapping import (
     FALLBACK_DOCUMENT_ID,
     PREMIUM_EMOJI_MAP,
     PREMIUM_EMOJI_MODES,
     MAX_IDS_PER_EMOJI,
 )
+
+CONVERTER_MODULE = 'services/premium_emoji_converter.py'
 
 # Telegram rejects custom-emoji entities for these reasons only; everything
 # else (timeouts, FloodWait, generic RPC) must surface unchanged.
@@ -88,6 +92,59 @@ class _Picker:
         value = self.ids[self.index]
         self.index = (self.index + 1) % len(self.ids)
         return value
+
+
+def _safe_chat_id(entity):
+    """شناسه عددی چت برای لاگ؛ هرگز اجازه خطا به مسیر ارسال نمی‌دهد."""
+    try:
+        if isinstance(entity, Message):
+            return getattr(entity, 'chat_id', None)
+        return utils.get_peer_id(entity)
+    except Exception:  # noqa: BLE001 - لاگ نباید مسیر ارسال را بشکند
+        return getattr(entity, 'chat_id', None) or getattr(entity, 'id', None)
+
+
+def _unique_emojis(text):
+    seen = []
+    for match in custom.EMOJI_PATTERN.finditer(text or ''):
+        token = match.group()
+        if token not in seen:
+            seen.append(token)
+    return seen
+
+
+def _new_custom_entities(result, existing):
+    """فقط entity های تازه‌ساخته‌شده (برای گزارش دقیق Document IDs)."""
+    old = {(e.offset, e.length, getattr(e, 'document_id', None))
+           for e in existing or () if isinstance(e, MessageEntityCustomEmoji)}
+    return [e for e in result or () if isinstance(e, MessageEntityCustomEmoji)
+            and (e.offset, e.length, getattr(e, 'document_id', None)) not in old]
+
+
+def _emit_conversion_debug(engine, meta, text, added):
+    """بلوک [PREMIUM DEBUG] + گزارش 🎨 تبدیل موفق (فقط وقتی entity جدید ساخته شد)."""
+    if not added:
+        return
+    meta = meta or {}
+    chat_id = meta.get('chat_id')
+    method = meta.get('method', 'unknown')
+    document_ids = [getattr(e, 'document_id', None) for e in added]
+    if getattr(config, 'PREMIUM_EMOJI_DEBUG', False):
+        tlog.send_premium_debug_block(tlog.format_premium_debug(
+            method=method, chat_id=chat_id, original_text=(text or '')[:300],
+            detected=_unique_emojis(text), document_ids=document_ids,
+            entity_count=len(added)))
+    tlog.send_premium_event(
+        '🎨 Premium Emoji Converted',
+        {
+            'User': engine.owner_id,
+            'Chat': chat_id,
+            'Method': method,
+            'Emoji': ' '.join(_unique_emojis(text)[:10]),
+            'Document ID': document_ids[0] if len(document_ids) == 1 else document_ids,
+            'Status': 'SUCCESS',
+        },
+        level='INFO', kind='converted')
 
 
 def _mapping_key(token):
@@ -147,6 +204,7 @@ class PremiumEmojiConverter:
         self.disabled_until = 0.0
         self.bypass = ContextVar('premium_converter_bypass', default=False)
         self.originals = {}
+        self.owner_id = None  # برای گزارش‌های User-oriented (پر می‌شود هنگام install)
 
     # ------------------------------------------------------------- enable
     def effective_enabled(self):
@@ -228,12 +286,14 @@ class PremiumEmojiConverter:
         return text, merged
 
     # -------------------------------------------------------- send wrapper
-    async def prepare(self, client, text, formatting, parse_mode):
+    async def prepare(self, client, text, formatting, parse_mode, meta=None):
         """Parse once through Telethon, convert, and report whether anything changed.
 
         Markdown/HTML are parsed by Telethon itself when no explicit entities
         are supplied, so every existing formatting entity survives with the
         exact offsets Telegram produced.
+
+        ``meta`` (اختیاری) فقط برای گزارش [PREMIUM DEBUG] است: method/chat_id.
         """
         if not isinstance(text, str) or not text:
             return text, formatting, False
@@ -246,7 +306,14 @@ class PremiumEmojiConverter:
         updated, result = self.convert(parsed, existing)
         old_count = sum(isinstance(e, MessageEntityCustomEmoji) for e in existing or [])
         new_count = sum(isinstance(e, MessageEntityCustomEmoji) for e in result or [])
-        return updated, result, new_count > old_count
+        changed = new_count > old_count
+        if changed:
+            try:
+                _emit_conversion_debug(self, meta, parsed,
+                                       _new_custom_entities(result, existing))
+            except Exception:  # noqa: BLE001 - گزارش هرگز تبدیل را نمی‌شکند
+                pass
+        return updated, result, changed
 
 
 def install_premium_emoji_converter(client, *, account, is_enabled=None):
@@ -262,9 +329,11 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
     installed = getattr(client, '_premium_emoji_converter', None)
     if isinstance(installed, PremiumEmojiConverter):
         installed.premium = bool(getattr(account, 'premium', False))
+        installed.owner_id = getattr(account, 'id', None)
         return installed
     engine = PremiumEmojiConverter(
         premium=getattr(account, 'premium', False), is_enabled=is_enabled)
+    engine.owner_id = getattr(account, 'id', None)
 
     def wrap(original, field, method):
         signature = inspect.signature(original)
@@ -289,9 +358,12 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
             value = bound.arguments.get(target, '')
             supplied = bound.arguments.get('formatting_entities')
             parse_mode = bound.arguments.get('parse_mode', ())
+            meta = {'method': method,
+                    'chat_id': _safe_chat_id(bound.arguments.get('entity'))}
 
             async def prepare_value(text, formatting):
-                return await engine.prepare(client, text, formatting, parse_mode)
+                return await engine.prepare(client, text, formatting, parse_mode,
+                                            meta=meta)
 
             changed = False
             try:
@@ -328,8 +400,32 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                         bound.arguments[target] = text
                         bound.arguments['formatting_entities'] = entities
                         bound.arguments['parse_mode'] = None
-            except Exception:
+            except Exception as exc:
                 changed = False  # never break the send because of conversion
+                # RC-C قدیمی: خطاهای تبدیل بی‌صدا بودند؛ اکنون دقیقاً گزارش می‌شوند.
+                try:
+                    frame = traceback.extract_tb(exc.__traceback__)[-1]
+                    line_number = frame.lineno
+                except Exception:  # noqa: BLE001
+                    line_number = None
+                tlog.send_error(
+                    '❌ Premium Emoji Error',
+                    {
+                        'File': CONVERTER_MODULE,
+                        'Line': line_number,
+                        'Method': method,
+                        'Error': f'{type(exc).__name__}: {exc}',
+                    },
+                    where=CONVERTER_MODULE)
+                tlog.send_premium_event(
+                    '⚠️ Premium Emoji Fallback',
+                    {
+                        'Reason': f'conversion failed ({type(exc).__name__})',
+                        'Action': 'Original message sent',
+                        'Method': method,
+                        'Chat': meta.get('chat_id'),
+                    },
+                    level='WARNING', kind='fallback')
             if not changed:
                 return await original(*args, **kwargs)
             token = engine.bypass.set(True)
@@ -348,7 +444,38 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                     # Telegram refused the custom emoji: one clean retry of the
                     # message exactly as the caller produced it. No duplicates.
                     engine.disabled_until = time.monotonic() + REJECTION_COOLDOWN_SECONDS
+                    tlog.send_premium_event(
+                        '⚠️ Premium Emoji Fallback',
+                        {
+                            'Reason': f'Telegram rejected entity ({type(exc).__name__})',
+                            'Action': 'Original message sent',
+                            'Cooldown': f'{REJECTION_COOLDOWN_SECONDS}s',
+                            'Method': method,
+                            'Chat': meta.get('chat_id'),
+                        },
+                        level='WARNING', kind='fallback')
                     return await original(*args, **kwargs)
+                except errors.FloodWaitError as exc:
+                    tlog.send_error(
+                        '❌ Telegram FloodWait',
+                        {
+                            'Method': method,
+                            'Wait': f'{exc.seconds}s',
+                            'Chat': meta.get('chat_id'),
+                        },
+                        where=CONVERTER_MODULE)
+                    raise
+                except Exception as exc:
+                    # خطاهای Send/Edit/RPC: ثبت و propagate (رفتار قبل حفظ می‌شود)
+                    tlog.send_error(
+                        '❌ Telegram Send Error',
+                        {
+                            'Method': method,
+                            'Error': f'{type(exc).__name__}: {exc}'[:400],
+                            'Chat': meta.get('chat_id'),
+                        },
+                        where=CONVERTER_MODULE)
+                    raise
             finally:
                 engine.bypass.reset(token)
         return wrapped
@@ -361,6 +488,108 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
             setattr(client, method, wrap(original, field, method))
     client._premium_emoji_converter = engine
     return engine
+
+
+def install_premium_emoji_outgoing_injector(client, engine):
+    """تزریق بعد از ارسال (Post-Send Fix) — فقط روی کلاینت Self نصب می‌شود.
+
+    چرا؟ کانورتر فقط متدهای همین کلاینت پایتون را می‌بندد؛ پیام‌هایی که از
+    اپ رسمی (گوشی/دسکتاپ) ارسال می‌شوند هرگز از آن عبور نمی‌کنند و در چت‌های
+    خصوصی/گروه «بعضی پیام‌ها تبدیل نمی‌شدند». این هندلر پیام‌های خروجیِ رسیده
+    از هر دستگاهی را بررسی می‌کند و اگر ایموجی قابل‌نگاشتِ بدون entity دارد،
+    همان متن را با MessageEntityCustomEmoji دقیق edit می‌کند (متن عوض
+    نمی‌شود؛ glyph عوض نمی‌شود؛ فقط entity اضافه می‌شود).
+
+    هرگز اجرا نمی‌شود روی: forward ها، پیام‌های via_bot (پنل اینلاین = محتوای
+    ربات)، سرویس/اکشن‌ها، پیام‌هایی که قبلاً Custom Emoji دارند، وقتی کانورتر
+    خاموش یا در cooldown است. کلاینت Bot هرگز این هندلر را نمی‌گیرد.
+    """
+    if getattr(client, '_premium_emoji_outgoing_injector', None) is not None:
+        return client._premium_emoji_outgoing_injector
+    if getattr(client, '_premium_emoji_converter', None) is not engine:
+        # گارد بات/کلاینت بدون کانورتر: تزریق فقط روی کلاینت Self مجهز مجاز است.
+        return None
+
+    @client.on(events.NewMessage(outgoing=True))
+    async def _outgoing_premium_fix(event):
+        message = getattr(event, 'message', None)
+        try:
+            if not getattr(config, 'PREMIUM_EMOJI_OUTGOING_FIX', True):
+                return
+            if message is None or getattr(message, 'action', None) is not None:
+                return
+            if getattr(message, 'fwd_from', None) is not None:
+                return  # forward_messages: طبق قانون هرگز دست‌نخورده
+            if getattr(message, 'via_bot_id', None):
+                return  # پیام‌های پنل اینلاین: محتوای ربات، مستقل از کانورتر
+            text = getattr(message, 'message', None)
+            if not isinstance(text, str) or not text or len(text) > MAX_MESSAGE_CHARS:
+                return
+            existing = list(getattr(message, 'entities', None) or [])
+            if any(isinstance(e, MessageEntityCustomEmoji) for e in existing):
+                return  # همین حالا پرمیوم است؛ idempotency
+            if not custom.EMOJI_PATTERN.search(text):
+                return
+            if not engine.effective_enabled() or time.monotonic() < engine.disabled_until:
+                return
+            updated, merged = engine.convert(text, existing)
+            added = _new_custom_entities(merged, existing)
+            if not added:
+                return  # هیچ نگاشت دقیقی موجود نیست؛ همان ایموجی معمولی می‌ماند
+            chat_id = getattr(event, 'chat_id', None)
+            peer = getattr(message, 'input_chat', None)
+            if peer is None:
+                peer = await client.get_input_entity(chat_id)
+            # فراخوانی مستقیم RPC: از wrap های send/edit عبور نمی‌کند تا
+            # نه prefix دوباره تزریق شود و نه تبدیل دوم رخ دهد (idempotent).
+            await client(functions.messages.EditMessageRequest(
+                peer=peer, id=message.id, message=updated, entities=merged or None))
+            _emit_conversion_debug(engine, {'method': 'outgoing_fix', 'chat_id': chat_id},
+                                   updated, added)
+        except REJECTED_ERRORS as exc:
+            # تلگرام entity را رد کرد: cooldown + گزارش fallback (دلیل همان لحظه)
+            engine.disabled_until = time.monotonic() + REJECTION_COOLDOWN_SECONDS
+            tlog.send_premium_event(
+                '⚠️ Premium Emoji Fallback',
+                {
+                    'Reason': f'Telegram rejected entity ({type(exc).__name__})',
+                    'Action': 'Original message kept (post-send fix skipped)',
+                    'Cooldown': f'{REJECTION_COOLDOWN_SECONDS}s',
+                    'Method': 'outgoing_fix',
+                    'Chat': getattr(event, 'chat_id', None),
+                },
+                level='WARNING', kind='fallback')
+        except (errors.MessageNotModifiedError, errors.MessageIdInvalidError,
+                errors.MessageAuthorRequiredError):
+            return  # رقابت با edit های دیگر؛ پیام سالم است
+        except Exception as exc:  # noqa: BLE001 - هیچ‌وقت پیام‌رسانی را نشکند
+            try:
+                frame = traceback.extract_tb(exc.__traceback__)[-1]
+                line_number = frame.lineno
+            except Exception:  # noqa: BLE001
+                line_number = None
+            tlog.send_error(
+                '❌ Premium Emoji Error',
+                {
+                    'File': CONVERTER_MODULE,
+                    'Line': line_number,
+                    'Method': 'outgoing_fix',
+                    'Error': f'{type(exc).__name__}: {exc}',
+                },
+                where=CONVERTER_MODULE)
+
+    client._premium_emoji_outgoing_injector = _outgoing_premium_fix
+    return _outgoing_premium_fix
+
+
+def uninstall_premium_emoji_outgoing_injector(client):
+    handler = getattr(client, '_premium_emoji_outgoing_injector', None)
+    if handler is not None:
+        try:
+            client.remove_event_handler(handler)
+        except Exception:  # noqa: BLE001
+            pass
+        del client._premium_emoji_outgoing_injector
 
 
 def uninstall_premium_emoji_converter(client):

@@ -49,7 +49,9 @@ from services.font_formatter import register_message_font_handler
 from services.premium_emoji_prefix import install_premium_prefix, uninstall_premium_prefix
 from services.premium_emoji_converter import (
     install_premium_emoji_converter,
+    install_premium_emoji_outgoing_injector,
     uninstall_premium_emoji_converter,
+    uninstall_premium_emoji_outgoing_injector,
 )
 from services.custom_emoji_service import (
     EmojiError,
@@ -329,11 +331,20 @@ async def run_self(session_path, session_string):
         # Malformed credentials may appear in exception messages: log type only.
         get_logger('self').warning('Session startup/runtime failed name=%s error=%s',
                                    sid, type(exc).__name__)
+        from services import telegram_logger as tlog
+        tlog.send_error(
+            '❌ Session Error',
+            {
+                'Account': sid,
+                'Error': type(exc).__name__,  # هرگز پیام استثنا (احتمال راز)
+            },
+            where='self.py')
         print(f"❌ بازیابی سشن {sid} ناموفق بود ({type(exc).__name__})؛ فایل حفظ شد")
     finally:
         if uid is not None:
             self_manager.unregister_client(uid, client)
         if client is not None:
+            uninstall_premium_emoji_outgoing_injector(client)
             uninstall_premium_emoji_converter(client)
             uninstall_premium_prefix(client)
             try:
@@ -347,18 +358,25 @@ async def _run_connected_self(client, me, uid, sid):
 
     # 🎨 Premium Emoji Converter — فقط خروجی همین اکانت کاربری؛ تنظیم روی/خاموش
     # هر حساب از پنل سلف (دکمه peconv_toggle) خوانده می‌شود با کش کوتاه ۲ ثانیه‌ای
-    # تا هیچ ارسال منتظر دیتابیس نماند.
+    # تا هیچ ارسال منتظر دیتابیس نماند. اگر خواندن دیتابیس (مثلاً قفل SQLite)
+    # موقتاً شکست بخورد، آخرین مقدار معتبر استفاده می‌شود تا کانورتر بی‌دلیل
+    # خاموش نشود (RC-D).
     def _converter_flag(_uid=uid, _cache={'value': None, 'at': 0.0}):
         now = time.monotonic()
         if now - _cache['at'] > 2.0:
             try:
                 _cache['value'] = db.get_user_settings(_uid).get('premium_emoji_converter')
+                _cache['at'] = now
             except Exception:
-                _cache['value'] = None
-            _cache['at'] = now
+                if _cache['at'] == 0.0:
+                    _cache['at'] = now  # اولین خواندن هم شکست خورد → پیش‌فرض config
+                # در غیر این صورت آخرین مقدار معتبر حفظ می‌شود؛ None برنمی‌گردد
         return _cache['value']
 
-    install_premium_emoji_converter(client, account=me, is_enabled=_converter_flag)
+    engine = install_premium_emoji_converter(client, account=me, is_enabled=_converter_flag)
+    # 🔧 Post-Send Fix: پیام‌های خروجی از هر دستگاه (گوشی/اپ رسمی) هم پرمیوم
+    # می‌شوند. قبل از فونت‌هندلر ثبت می‌شود تا اولویت پردازش با آن باشد.
+    install_premium_emoji_outgoing_injector(client, engine)
     tabchi_models.init_custom_emojis_db()
 
     import self_manager
