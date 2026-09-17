@@ -18,9 +18,14 @@
   ❌ هیچ پیام خروجی، send_message، event outgoing یا typing لیست را ریست
      نمی‌کند (این رفتار v0.09.13 باعث loop و اسپم می‌شد — حذف شد).
 - کنترل: .عدم_حضور روشن/خاموش/ریست، .متن_عدم_حضور، .away و پنل (.پنل → 💤 پیام عدم حضور).
-- پاسخ از client.send_message عبور می‌کند؛ یعنی Unified Pipeline و
-  Premium Emoji Resend روی آن فعال‌اند و Presence Manager بعد از ارسال،
-  اکانت را دوباره Offline می‌کند (ارسال پاسخ Away باعث Online شدن نمی‌شود).
+- پاسخ از client.send_message عبور می‌کند ولی «هرگز» وارد سیستم ایموجی
+  ویژه نمی‌شود (AWAY_BYPASS_PREMIUM = True — اصلاح نهایی v0.09.14):
+      ❌ بدون Custom Emoji Pipeline (کانورتر)
+      ❌ بدون Resend (مدیر ارسال دوباره)
+      ❌ بدون Delete/New Send
+  و Presence Manager بعد از ارسال، اکانت را دوباره Offline می‌کند
+  (ارسال پاسخ Away باعث Online ماندن نمی‌شود؛ وضعیت قبل ارسال و
+  زمان بازگردانی Offline ثبت می‌شود).
 - حلقه‌بندی غیرممکن است: هیچ مسیر ریستی به پیام‌های خروجی وصل نیست و
   به بات‌ها پاسخ نمی‌دهیم.
 
@@ -39,6 +44,8 @@ from uuid import uuid4
 from telethon import events
 
 import db
+from services import away_bypass
+from services import presence_manager as presence
 from services import telegram_logger as tlog
 
 # متن پیش‌فرض (همان db.DEFAULT_AWAY_TEXT؛ اینجا هم ارجاع داده می‌شود)
@@ -205,12 +212,22 @@ async def _handle_incoming(client, uid, event) -> None:
     if _already_notified(settings, chat_id):
         _log(chat_id, 'روشن', 'قبلاً ارسال شده', telegram=False)
         return  # در این چت فقط یک بار؛ پیام‌های بعدی هیچ پاسخی نمی‌گیرند
+    # 🛡 ثبت وضعیت اکانت قبل از ارسال پاسخ عدم حضور (spec مالک):
+    #    «قبل ارسال Away وضعیت چیست» → بلوک [مدیریت وضعیت]
+    presence.report_pre_away_status(client)
     try:
-        await client.send_message(
-            chat_id, settings['away_text'], parse_mode=None)
+        # 🚫 AWAY_BYPASS_PREMIUM = True — پاسخ عدم حضور هرگز وارد سیستم
+        #    ایموجی ویژه نمی‌شود: بدون Custom Emoji Pipeline، بدون Resend،
+        #    بدون Delete/New Send (استقلال کامل — spec مالک).
+        async with away_bypass.away_send_guard():
+            sent = await client.send_message(
+                chat_id, settings['away_text'], parse_mode=None)
     except Exception as exc:  # noqa: BLE001 - شکست پاسخ هرگز crash نیست
         _log(chat_id, 'روشن', f'ارسال ناموفق ({type(exc).__name__})')
         return
+    # 🔒 ثبت پیام در registry داخلی: رویداد outgoing بعدیِ این پیام هرگز
+    #    به مدیر ارسال دوباره (Premium Emoji Resend) نمی‌رسد.
+    away_bypass.mark_away_reply(sent)
     _mark_notified(uid, chat_id)
     _log(chat_id, 'روشن', 'ارسال شد')
 

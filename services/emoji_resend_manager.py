@@ -56,6 +56,7 @@ from collections import OrderedDict
 
 import config
 
+from services import away_bypass
 from services import telegram_logger as tlog
 from services.custom_emoji_service import EMOJI_PATTERN
 from services.premium_emoji_converter import (
@@ -421,6 +422,11 @@ class EmojiResendManager:
             (هیچ Edit ای در هیچ مرحله‌ای انجام نمی‌شود)
         """
         if message is None or getattr(message, 'action', None) is not None:
+            return 'skipped'
+        # 💤 AWAY_BYPASS_PREMIUM — پاسخ عدم حضور هرگز وارد جریان ارسال
+        # دوباره نمی‌شود: بدون بررسی سرور، بدون حذف، بدون ارسال جدید.
+        # (استقلال کامل Away از Premium Emoji — spec مالک)
+        if away_bypass.is_away_reply(message):
             return 'skipped'
         if getattr(message, 'fwd_from', None) is not None:
             return 'skipped'  # forward ها طبق قانون هرگز دست‌نخورده می‌مانند

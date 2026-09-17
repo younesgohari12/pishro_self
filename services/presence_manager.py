@@ -30,6 +30,12 @@
     Online Trigger: send_message
     منبع: send_message
     اقدام: اجازه شد؛ بازگردانی آفلاین زمان‌بندی شد
+
+ثبت spec مالک (اصلاح نهایی v0.09.14):
+- «قبل از ارسال پاسخ عدم حضور» وضعیت اکانت ثبت می‌شود
+  (report_pre_away_status → بلوک [مدیریت وضعیت]).
+- «بعد از ارسال» لحظه و زمان بازگردانی Offline ثبت می‌شود:
+      Offline Restore: انجام شد (1.2 ثانیه بعد از ارسال) — ساعت 12:34:56
 """
 from __future__ import annotations
 
@@ -167,6 +173,8 @@ def install_presence_manager(client, uid, *, is_active=None,
         'sender': None,                   # آخرین sender دیده‌شده
         'offline_due': 0.0,               # موعد بازگردانی آفلاین
         'worker': None,                   # تسک debounce جاری
+        'status': 'نامشخص',               # آخرین وضعیت شناخته‌شده اکانت
+        'last_send_mono': None,           # زمان آخرین ارسال مجاز (monotonic)
     }
 
     async def _send_offline_now():
@@ -179,8 +187,16 @@ def install_presence_manager(client, uid, *, is_active=None,
             return
         try:
             await state['original_call'](sender, request_cls(offline=True))
-            _log('send_message', 'send_message',
-                 'اکانت دوباره Offline شد (UpdateStatus offline=True)',
+            state['status'] = 'Offline'
+            # ⏱ گزارش زمان Offline Restore (spec مالک — اصلاح نهایی)
+            restore_note = 'اکانت دوباره Offline شد (UpdateStatus offline=True)'
+            last_send = state.get('last_send_mono')
+            if last_send is not None:
+                waited = time.monotonic() - last_send
+                restore_note = (f'Offline Restore انجام شد '
+                                f'({waited:.1f} ثانیه بعد از ارسال) — '
+                                f'ساعت {time.strftime("%H:%M:%S")}')
+            _log('offline_restore', 'presence_manager', restore_note,
                  telegram=False)
         except Exception:  # noqa: BLE001 - بازگردانی آفلاین هرگز crash نیست
             pass
@@ -226,10 +242,16 @@ def install_presence_manager(client, uid, *, is_active=None,
                         if not offline:  # فقط درخواست «Online شدن» ممنوع است
                             blocked_action = ('status_online', 'manual',
                                               'مسدود شد — وضعیت آنلاین دستی ارسال نشد')
+                        else:
+                            # آفلاین‌سازی واقعی در حال انجام است
+                            state['status'] = 'Offline'
                     elif kind == 'send':
                         trigger = source = 'send_message'
+                        state['last_send_mono'] = time.monotonic()
                         _log('send_message', 'send_message',
-                             'اجازه شد؛ بازگردانی آفلاین زمان‌بندی شد')
+                             f'اجازه شد؛ بازگردانی آفلاین در '
+                             f'{max(0.0, float(offline_delay)):.1f} ثانیه '
+                             f'زمان‌بندی شد')
                         _schedule_offline()
                     if blocked_action:
                         break
@@ -267,6 +289,30 @@ def uninstall_presence_manager(client) -> None:
             pass
 
 
+# ================================================== گزارش وضعیت (spec مالک)
+def describe_status(client) -> str:
+    """برچسب وضعیت فعلی اکانت از دید Presence Manager.
+
+    خروجی: 'Offline' / 'Online' / 'نامشخص' / 'نصب نیست'.
+    """
+    state = getattr(client, '_presence_state', None)
+    if not state:
+        return 'نصب نیست'
+    return str(state.get('status') or 'نامشخص')
+
+
+def report_pre_away_status(client) -> str:
+    """ثبت «قبل ارسال Away وضعیت چیست» (spec مالک — اصلاح نهایی v0.09.14).
+
+    بلوک [مدیریت وضعیت] با منبع send_message صادر می‌شود و برچسب وضعیت
+    برمی‌گردد؛ هرگز مسیر ارسال را نمی‌شکند.
+    """
+    label = describe_status(client)
+    _log('away_reply', 'send_message',
+         f'قبل ارسال پاسخ عدم حضور: {label}', telegram=False)
+    return label
+
+
 def assert_offline(client):
     """آفلاین‌سازی فوری (بدون debounce) — برای لحظه روشن کردن Away."""
     state = getattr(client, '_presence_state', None)
@@ -282,6 +328,7 @@ def assert_offline(client):
     async def _job():
         try:
             await state['original_call'](sender, request_cls(offline=True))
+            state['status'] = 'Offline'  # وضعیت شناخته‌شده به‌روز شد
         except Exception:  # noqa: BLE001
             pass
 

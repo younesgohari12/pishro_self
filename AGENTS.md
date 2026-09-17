@@ -202,12 +202,11 @@ routine compatible updates do not require a new approval step.
   (`STATE_DEBUG`, channel level `AWAY_LOG_LEVEL`).
 
 ### Away Message (`services/away.py`)
-- Auto-reply for private chats only while enabled; one message per user
-  until the owner comes back online (any owner outgoing message resets the
-  sent list), a manual reset, or the optional `AWAY_RESET_HOURS` TTL.
-  Bot senders, service messages, muted and enemy chats are ignored. The
-  away reply itself never triggers a reset (self-ignoring set), and it is
-  sent through client.send_message so the Unified Pipeline still applies.
+- Auto-reply for private chats only while enabled; since v0.09.14 the limit
+  is PER CHAT (`away_sent_chats`) and reset is manual/session-only (see the
+  v0.09.14-final section below). The away reply is sent through
+  client.send_message but BYPASSES the Premium Emoji system entirely
+  (AWAY_BYPASS_PREMIUM — no conversion, no resend, no delete/new send).
 - Settings live in the database: `away_enabled`, `away_text`,
   `away_sent_users` ({user_id: last_sent_ts}). Commands: `.away` (status),
   `.away on|off`, `.away text <متن>`, `.away reset`. Panel: .پنل →
@@ -217,3 +216,43 @@ routine compatible updates do not require a new approval step.
 - New config keys are marker-guarded once:
   `v0.09.13-premium-resend-away` (main.py) adds
   `PREMIUM_EMOJI_RESEND_MODE` when missing; manual owner edits always win.
+
+## Away ↔ Premium independence + Presence contract (v0.09.14 final)
+
+### AWAY_BYPASS_PREMIUM (`services/away_bypass.py`)
+- Owner spec (final fix): the Away reply must NEVER enter the Premium Emoji
+  system — no Custom Emoji Pipeline (converter), no Resend, no Delete/New
+  Send. Away and Premium Emoji are fully independent.
+- Config key `AWAY_BYPASS_PREMIUM` (default True via getattr; read on every
+  call so panel/config edits apply without restart).
+- Two complementary mechanisms (the outgoing event arrives on a different
+  task, so a ContextVar alone cannot cover the post-send path):
+  1) Pre-send context guard: `away_send_guard()` sets a ContextVar checked
+     by BOTH wrappers — `premium_emoji_converter.wrap` and
+     `premium_emoji_injector.wrap` — so the away text is sent untouched
+     (no entity injection, no conversion, no meta/reports).
+  2) Post-send message registry: `mark_away_reply(sent_message)` records
+     `(chat_id, message_id)` with a 20s TTL / 512-entry cap, and
+     `EmojiResendManager.handle_outgoing` returns 'skipped' as the FIRST
+     check for registered messages (before album queueing) — no server
+     verify, no delete, no new send.
+- The bridge module deliberately has zero imports from away.py or premium
+  modules, so removing either system cannot break the other.
+
+### Away per-chat + Presence (v0.09.14, unchanged core)
+- Away DB keys: `away_enabled`, `away_text`, `away_active_session`,
+  `away_sent_chats` ({chat_id: ts}); reset ONLY by manual toggle/reset or a
+  new real session (`register_away_handlers` → `start_session`).
+- `services/presence_manager.py` wraps `client._call`: while Away is active
+  it blocks SetTypingRequest, Read* family and UpdateStatusRequest(
+  offline=False); every allowed send schedules ONE debounced
+  UpdateStatusRequest(offline=True) (DEFAULT_OFFLINE_DELAY 1.2s).
+- Final-fix presence logging (owner spec): before each away reply,
+  `report_pre_away_status(client)` emits a `[مدیریت وضعیت]` block with the
+  tracked status ('نامشخص'/'Offline'/'Online'/'نصب نیست'); after the send
+  the offline restore logs 'Offline Restore انجام شد (X ثانیه بعد از
+  ارسال) — ساعت HH:MM:SS'. `describe_status(client)` exposes the label.
+- Tests: `tests/test_away_bypass_premium.py` (12 cases — converter bypass,
+  resend bypass incl. album path, flag-off fallback, real Chat A/B matrix
+  with the full pipeline, presence pre-send status, offline-restore timing,
+  full-independence smoke).

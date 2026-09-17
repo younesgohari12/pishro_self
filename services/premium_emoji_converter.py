@@ -47,6 +47,7 @@ from telethon import errors, events, utils
 from telethon.tl import types
 from telethon.tl.types import Message, MessageEntityCustomEmoji
 
+from services import away_bypass
 from services import custom_emoji_service as custom
 from services import telegram_logger as tlog
 from premium_emoji_mapping import (
@@ -500,7 +501,10 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
 
         @wraps(original)
         async def wrapped(*args, **kwargs):
-            if (engine.bypass.get() or not engine.effective_enabled()):
+            # 💤 AWAY_BYPASS_PREMIUM: پاسخ عدم حضور هرگز وارد Custom Emoji
+            # Pipeline نمی‌شود — بدون تبدیل، بدون Resend، بدون Delete/New Send.
+            if (engine.bypass.get() or away_bypass.active()
+                    or not engine.effective_enabled()):
                 return await original(*args, **kwargs)
             bound = signature.bind(*args, **kwargs)
             target = field

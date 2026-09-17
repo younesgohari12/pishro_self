@@ -23,6 +23,7 @@ from telethon.tl.types import (
     Message, MessageEntityCustomEmoji, MessageEntityCode, MessageEntityPre,
     MessageEntityUrl, MessageEntityTextUrl,
 )
+from services import away_bypass
 from services import custom_emoji_service as custom
 
 logger = logging.getLogger(__name__)
@@ -487,7 +488,10 @@ def install_premium_emoji_injector(client, *, premium=False):
 
         @wraps(original)
         async def wrapped(*args, **kwargs):
-            if BYPASS.get() or not getattr(config, 'PREMIUM_EMOJI_ENABLED', True):
+            # 💤 AWAY_BYPASS_PREMIUM: پاسخ عدم حضور هرگز وارد سیستم ایموجی
+            # ویژه نمی‌شود — بدون تبدیل، بدون Resend، بدون Delete/New Send.
+            if (BYPASS.get() or away_bypass.active()
+                    or not getattr(config, 'PREMIUM_EMOJI_ENABLED', True)):
                 return await original(*args, **kwargs)
             changed = False
             try:
