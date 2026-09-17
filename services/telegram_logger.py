@@ -203,6 +203,8 @@ _MIN_INTERVALS = {
     'resend_debug': 3.0,    # [PremiumResend] (سپرده مستقل)
     'premium_check': 2.0,   # [PREMIUM_CHECK] (بررسی سرور قبل از تصمیم Resend)
     'away': 3.0,            # [پیام عدم حضور]
+    'away_trace': 3.0,      # [AWAY_TRACE] (Audit — سپرده مستقل)
+    'premium_trace': 2.0,   # [PREMIUM_TRACE] (Audit — سپرده مستقل)
     'presence': 3.0,        # [مدیریت وضعیت]
     'state': 3.0,           # [STATE]
     'generic': 30.0,        # send_log/error/warning عمومی
@@ -403,6 +405,120 @@ def format_away_debug(*, chat_id, status, result):
         f'وضعیت: {status}\n'
         f'نتیجه: {result}'
     )
+
+
+def format_away_trace(record):
+    """بلوک استاندارد [AWAY_TRACE] مطابق spec مالک (Audit نهایی v0.09.15):
+
+        [AWAY_TRACE]
+
+        chat_id: 123456789
+        trigger: پیام خصوصی ورودی (...)
+        bypass_active: بله (AWAY_BYPASS_PREMIUM=True)
+        premium_pipeline_entered: خیر — هرگز (گارد تایید کرد: converter)
+        resend_entered: خیر — هرگز (...)
+        final_sender: client.send_message (بدون تبدیل — متن خام)
+
+    هدف: اثبات اینکه پاسخ عدم حضور هرگز وارد سیستم ایموجی ویژه نمی‌شود.
+    نام فیلدها عیناً همان spec مالک است؛ مقادیر فارسی‌اند.
+    """
+    bypass = bool(record.get('bypass_active'))
+    guards = [str(item) for item in (record.get('guard_hits') or [])]
+    if record.get('premium_pipeline_entered'):
+        pipeline_line = 'بله ⚠️'
+    else:
+        pipeline_line = 'خیر — هرگز'
+        if guards:
+            pipeline_line += f" (گارد تایید کرد: {' + '.join(guards)})"
+    if record.get('resend_entered'):
+        resend_line = 'بله ⚠️'
+    elif record.get('resend_note'):
+        resend_line = f"خیر — هرگز ({record['resend_note']})"
+    else:
+        resend_line = 'خیر — هرگز (پیام در registry ثبت شد)'
+    if record.get('final_sender'):
+        sender_line = record['final_sender']
+    elif record.get('send_error'):
+        sender_line = f"ارسال ناموفق ({record['send_error']})"
+    else:
+        sender_line = 'نامشخص'
+    return (
+        '[AWAY_TRACE]\n'
+        '\n'
+        f"chat_id: {record.get('chat_id')}\n"
+        f"trigger: {record.get('trigger')}\n"
+        f"bypass_active: {'بله (AWAY_BYPASS_PREMIUM=True)' if bypass else 'خیر'}\n"
+        f"premium_pipeline_entered: {pipeline_line}\n"
+        f"resend_entered: {resend_line}\n"
+        f"final_sender: {sender_line}"
+    )
+
+
+def format_premium_trace(*, message_id, is_away, entity_check, delete_called,
+                         new_send_called):
+    """بلوک استاندارد [PREMIUM_TRACE] مطابق spec مالک (Audit نهایی v0.09.15):
+
+        [PREMIUM_TRACE]
+
+        message_id: 123
+        is_away: خیر
+        entity_check: انجام شد (نمای سرور)
+        delete_called: بله
+        new_send_called: بله
+
+    برای پیام Away همیشه: is_away=بله، entity_check=انجام نشد،
+    delete_called=خیر، new_send_called=خیر — اثبات عدم ورود به Premium.
+    """
+    return (
+        '[PREMIUM_TRACE]\n'
+        '\n'
+        f'message_id: {message_id}\n'
+        f"is_away: {'بله' if is_away else 'خیر'}\n"
+        f'entity_check: {entity_check}\n'
+        f"delete_called: {'بله' if delete_called else 'خیر'}\n"
+        f"new_send_called: {'بله' if new_send_called else 'خیر'}"
+    )
+
+
+def send_away_trace(block_text, *, chat_id=None):
+    """بلوک [AWAY_TRACE] — لاگ محلی همیشه؛ تلگرام با پرچم AWAY_DEBUG.
+
+    سپرده ضد-اسپم مستقل (away_trace) تا بلوک [پیام عدم حضور] سرکوب نشود.
+    """
+    text = redact(block_text)
+    _system_file_log.info('%s', text)
+    if not getattr(config, 'AWAY_DEBUG', True):
+        return False
+    channel = getattr(config, 'AWAY_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('away_trace', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('away_trace'), _chat_ids(chat_id))
+    return True
+
+
+def send_premium_trace(block_text, *, chat_id=None):
+    """بلوک [PREMIUM_TRACE] — لاگ محلی همیشه؛ تلگرام با پرچم RESEND_DEBUG.
+
+    سپرده ضد-اسپم مستقل (premium_trace)؛ بلاک is_away=بله (اثبات عدم ورود
+    پیام عدم حضور) همیشه ارسال می‌شود و فقط به لاگ محلی محدود نمی‌ماند.
+    """
+    text = redact(block_text)
+    _premium_file_log.info('%s', text)
+    if not getattr(config, 'PREMIUM_EMOJI_RESEND_DEBUG', True):
+        return False
+    channel = getattr(config, 'PREMIUM_EMOJI_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('premium_trace', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('premium_trace'), _chat_ids(chat_id))
+    return True
 
 
 def format_presence_debug(*, trigger, source, action):

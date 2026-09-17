@@ -335,6 +335,20 @@ class EmojiResendManager:
         except Exception:  # noqa: BLE001 - لاگ هرگز مسیر را نمی‌شکند
             pass
 
+    def _emit_trace(self, message, *, is_away, entity_check,
+                    delete_called=False, new_send_called=False):
+        """[PREMIUM_TRACE] — Audit نهایی v0.09.15؛ هرگز مسیر را نمی‌شکند."""
+        try:
+            tlog.send_premium_trace(tlog.format_premium_trace(
+                message_id=getattr(message, 'id', None),
+                is_away=is_away,
+                entity_check=entity_check,
+                delete_called=delete_called,
+                new_send_called=new_send_called),
+                chat_id=getattr(message, 'chat_id', None))
+        except Exception:  # noqa: BLE001 - ثبت هرگز مسیر را نمی‌شکند
+            pass
+
     def _log_resend(self, message, *, deleted, resent, new_message_id=None,
                     reason=None):
         """بلوک [ارسال دوباره] — نتیجه حذف/ارسال جدید.
@@ -427,6 +441,14 @@ class EmojiResendManager:
         # دوباره نمی‌شود: بدون بررسی سرور، بدون حذف، بدون ارسال جدید.
         # (استقلال کامل Away از Premium Emoji — spec مالک)
         if away_bypass.is_away_reply(message):
+            # [PREMIUM_TRACE] Audit: اثبات از سمت Premium — این پیام دیده
+            # شد و «بدون هیچ اقدامی» رد شد (نکته: این بررسی غیرمشروط است
+            # و حتی با ارسال دوباره خاموش هم اجرا می‌شود).
+            away_bypass.note_resend_away_skip(message)
+            self._emit_trace(
+                message, is_away=True,
+                entity_check='انجام نشد (پاسخ عدم حضور — بدون بررسی سرور)',
+                delete_called=False, new_send_called=False)
             return 'skipped'
         if getattr(message, 'fwd_from', None) is not None:
             return 'skipped'  # forward ها طبق قانون هرگز دست‌نخورده می‌مانند
@@ -512,10 +534,16 @@ class EmojiResendManager:
             if self.debug_reports and not has_custom:
                 self._emit_check(message, has_custom=has_custom,
                                  result='ایموجی قابل‌نگاشت ندارد؛ بدون تغییر')
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام نشد (ایموجی قابل‌نگاشت ندارد)',
+                             delete_called=False, new_send_called=False)
             return 'skipped'
         if has_custom:
             self._emit_check(message, has_custom=True,
                              result='Entity واقعی داخل پیام موجود است؛ بدون تغییر')
+            self._emit_trace(message, is_away=False,
+                             entity_check='Entity در event موجود است',
+                             delete_called=False, new_send_called=False)
             await self._debug_report(
                 '🔧 بررسی ایموجی ویژه\n'
                 f'{self._report_head(message)}\n'
@@ -531,6 +559,9 @@ class EmojiResendManager:
             self._emit_check(message, has_custom=True,
                              server_note=server_note,
                              result='Entity واقعی روی سرور موجود است؛ بدون تغییر')
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام شد (نمای سرور) — Entity موجود',
+                             delete_called=False, new_send_called=False)
             await self._debug_report(
                 '🔧 بررسی ایموجی ویژه\n'
                 f'{self._report_head(message)}\n'
@@ -542,6 +573,9 @@ class EmojiResendManager:
             self._emit_check(message, has_custom=False,
                              server_note=server_note,
                              result='پیام روی سرور نیست؛ کاری انجام نشد')
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام شد (نمای سرور) — پیام غایب',
+                             delete_called=False, new_send_called=False)
             await self._debug_report(
                 '🔧 بررسی ایموجی ویژه\n'
                 f'{self._report_head(message)}\n'
@@ -553,11 +587,17 @@ class EmojiResendManager:
                 self._emit_check(message, has_custom=False,
                                  server_note=server_note,
                                  result='نگاشت ایموجی ویژه پیدا نشد؛ پیام حفظ شد')
+                self._emit_trace(message, is_away=False,
+                                 entity_check='انجام شد (نمای سرور) — نگاشت پیدا نشد',
+                                 delete_called=False, new_send_called=False)
                 return 'skipped'
         else:
             self._emit_check(message, has_custom=False,
                              server_note=server_note,
                              result='ارسال دوباره خاموش است؛ پیام حفظ شد')
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام شد (نمای سرور) — ارسال دوباره خاموش',
+                             delete_called=False, new_send_called=False)
             return 'skipped'
         _text, merged, _added = converted
         chat_id = getattr(message, 'chat_id', None)
@@ -591,6 +631,9 @@ class EmojiResendManager:
         deleted = await self._delete_original(message)
         if not deleted:
             # حذف ناموفق → ارسال نسخه جدید ممنوع (پیام تکراری ساخته نمی‌شود)
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام شد (نمای سرور)',
+                             delete_called=False, new_send_called=False)
             self._log_resend(message, deleted=False, resent=False,
                              reason='حذف پیام اصلی ناموفق بود؛ نسخه جدید ارسال نشد')
             await self._debug_report(
@@ -606,6 +649,9 @@ class EmojiResendManager:
             self._mark_recent(getattr(sent, 'chat_id', chat_id),
                               getattr(sent, 'id', 0) or 0)
             self.stats['resent'] += 1
+            self._emit_trace(message, is_away=False,
+                             entity_check='انجام شد (نمای سرور)',
+                             delete_called=True, new_send_called=True)
             self._log_resend(message, deleted=True, resent=True,
                              new_message_id=getattr(sent, 'id', None),
                              reason=None if with_entity
@@ -618,6 +664,9 @@ class EmojiResendManager:
             return sent
         # همه تلاش‌های ارسال شکست خورد؛ محتوا در گزارش خطا حفظ می‌شود
         self.stats['failed'] += 1
+        self._emit_trace(message, is_away=False,
+                         entity_check='انجام شد (نمای سرور)',
+                         delete_called=True, new_send_called=False)
         self._log_resend(message, deleted=True, resent=False,
                          reason='ارسال نسخه جدید پس از چند تلاش ناموفق بود')
         await self._debug_report(
@@ -778,6 +827,9 @@ class EmojiResendManager:
             result=('ارسال دوباره کل آلبوم' if conversions is not None
                     else 'آلبوم حفظ شد (entity یا نگاشت موجود نیست)'))
         if conversions is None:
+            self._emit_trace(bases[0], is_away=False,
+                             entity_check='انجام شد (نمای سرور) — آلبوم حفظ شد',
+                             delete_called=False, new_send_called=False)
             return
         try:
             async with self._lock_for(key[0]):
@@ -807,6 +859,10 @@ class EmojiResendManager:
                         deleted += 1
                 if deleted != len(bases):
                     # حذف ناقص → ارسال آلبوم جدید ممنوع (پیام تکراری می‌ماند)
+                    self._emit_trace(bases[0], is_away=False,
+                                     entity_check='انجام شد (نمای سرور) — آلبوم',
+                                     delete_called=bool(deleted),
+                                     new_send_called=False)
                     self._log_resend(
                         bases[0], deleted=False, resent=False,
                         reason=f'{len(bases) - deleted} حذف ناموفق بود؛ '
@@ -820,6 +876,9 @@ class EmojiResendManager:
                 sent_list = await self._send_album_copy(bases, copies, key[0])
                 if not sent_list:
                     self.stats['failed'] += 1
+                    self._emit_trace(bases[0], is_away=False,
+                                     entity_check='انجام شد (نمای سرور) — آلبوم',
+                                     delete_called=True, new_send_called=False)
                     self._log_resend(bases[0], deleted=True, resent=False,
                                      reason='ارسال آلبوم جدید ناموفق بود')
                     await self._debug_report(
@@ -830,6 +889,9 @@ class EmojiResendManager:
                 for sent in sent_list:
                     self._mark_recent(key[0], getattr(sent, 'id', 0) or 0)
                 self.stats['resent'] += 1
+                self._emit_trace(bases[0], is_away=False,
+                                 entity_check='انجام شد (نمای سرور) — آلبوم',
+                                 delete_called=True, new_send_called=True)
                 self._log_resend(
                     bases[0], deleted=True, resent=True,
                     new_message_id=', '.join(

@@ -490,7 +490,12 @@ def install_premium_emoji_injector(client, *, premium=False):
         async def wrapped(*args, **kwargs):
             # 💤 AWAY_BYPASS_PREMIUM: پاسخ عدم حضور هرگز وارد سیستم ایموجی
             # ویژه نمی‌شود — بدون تبدیل، بدون Resend، بدون Delete/New Send.
-            if (BYPASS.get() or away_bypass.active()
+            if away_bypass.active():
+                # [AWAY_TRACE] Audit: گارد برخورد کرد → پیام دست‌نخورده
+                # عبور می‌کند (هیچ تبدیلی انجام نمی‌شود).
+                away_bypass.note_pipeline_guard('injector')
+                return await original(*args, **kwargs)
+            if (BYPASS.get()
                     or not getattr(config, 'PREMIUM_EMOJI_ENABLED', True)):
                 return await original(*args, **kwargs)
             changed = False

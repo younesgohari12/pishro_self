@@ -256,3 +256,32 @@ routine compatible updates do not require a new approval step.
   resend bypass incl. album path, flag-off fallback, real Chat A/B matrix
   with the full pipeline, presence pre-send status, offline-restore timing,
   full-independence smoke).
+
+### Final audit traces (v0.09.15 FINAL AUDIT — logging only, no features)
+- `[AWAY_TRACE]` (owner spec format: chat_id / trigger / bypass_active /
+  premium_pipeline_entered / resend_entered / final_sender) is emitted for
+  EVERY away reply from `services/away.py` right after the send. The record
+  is built in the neutral bridge `services/away_bypass.py`:
+  `begin_away_trace` → converter/injector guards call
+  `note_pipeline_guard('converter'|'injector')` when `away_bypass.active()`
+  (proof the message passed the Premium pipeline untouched) →
+  `finalize_away_trace(sent, final_sender)` keys the record by
+  (chat_id, message_id) with a 20s TTL.
+- When `EmojiResendManager.handle_outgoing` hits its FIRST (unconditional)
+  `is_away_reply` check it calls `note_resend_away_skip(message)` (updates
+  the away trace with a "seen and skipped" note) and emits
+  `[PREMIUM_TRACE]` (message_id / is_away / entity_check / delete_called /
+  new_send_called) with is_away=بله and both actions خیر — proof from the
+  Premium side, even when resend is disabled. All other resend decisions
+  emit `[PREMIUM_TRACE]` with the factual action flags (single + album).
+- Senders: `tlog.send_away_trace` (flag AWAY_DEBUG, own anti-spam slot
+  'away_trace') and `tlog.send_premium_trace` (flag
+  PREMIUM_EMOJI_RESEND_DEBUG, slot 'premium_trace'); local file logs are
+  always written. Trace calls are exception-guarded and never affect sends.
+- Send-path classification audit (300 runtime sites): exactly ONE
+  Away-Bypass site (`away.py::_handle_incoming`), 4 resend-output sites,
+  1 debug bypass, 60 bot-client direct, 234 premium-pipeline inputs.
+  See `AUDIT_REPORT_v0.09.15_FINAL_FA.md` for the full table.
+- Tests: `tests/test_final_audit_traces.py` (9 cases — exact block formats,
+  guard proof, unconditional away skip, full resend actions, server-entity
+  no-action, Chat A/B per-chat traces, independence).

@@ -215,21 +215,37 @@ async def _handle_incoming(client, uid, event) -> None:
     # 🛡 ثبت وضعیت اکانت قبل از ارسال پاسخ عدم حضور (spec مالک):
     #    «قبل ارسال Away وضعیت چیست» → بلوک [مدیریت وضعیت]
     presence.report_pre_away_status(client)
+    # 🔍 [AWAY_TRACE] (Audit نهایی v0.09.15) — شروع Trace این ارسال:
+    #    کانورتر/اینجکتور (گارد) و مدیر ارسال دوباره (registry skip) هر کدام
+    #    از سمت خودشان این Trace را تکمیل/تأیید می‌کنند.
+    trigger = (f'پیام خصوصی ورودی (فرستنده={sender_id}, '
+               f'پیام={getattr(message, "id", None)})')
+    trace = away_bypass.begin_away_trace(chat_id, trigger)
     try:
         # 🚫 AWAY_BYPASS_PREMIUM = True — پاسخ عدم حضور هرگز وارد سیستم
         #    ایموجی ویژه نمی‌شود: بدون Custom Emoji Pipeline، بدون Resend،
         #    بدون Delete/New Send (استقلال کامل — spec مالک).
-        async with away_bypass.away_send_guard():
+        async with away_bypass.away_send_guard() as bypass_engaged:
             sent = await client.send_message(
                 chat_id, settings['away_text'], parse_mode=None)
     except Exception as exc:  # noqa: BLE001 - شکست پاسخ هرگز crash نیست
+        away_bypass.fail_away_trace(trace, type(exc).__name__)
         _log(chat_id, 'روشن', f'ارسال ناموفق ({type(exc).__name__})')
         return
+    trace['bypass_active'] = bool(bypass_engaged)
     # 🔒 ثبت پیام در registry داخلی: رویداد outgoing بعدیِ این پیام هرگز
     #    به مدیر ارسال دوباره (Premium Emoji Resend) نمی‌رسد.
     away_bypass.mark_away_reply(sent)
     _mark_notified(uid, chat_id)
     _log(chat_id, 'روشن', 'ارسال شد')
+    # 🔍 پایان Trace: فرستنده نهایی «client.send_message خام» بود؛ بعد از
+    #    این، PREMIUM_TRACE (is_away=بله) از سمت مدیر ارسال دوباره می‌آید.
+    away_bypass.finalize_away_trace(
+        trace, sent, 'client.send_message (بدون تبدیل — متن خام)')
+    try:
+        tlog.send_away_trace(tlog.format_away_trace(trace), chat_id=chat_id)
+    except Exception:  # noqa: BLE001 - ثبت هرگز مسیر را نمی‌شکند
+        pass
 
 
 # ================================================== نصب هندلرها

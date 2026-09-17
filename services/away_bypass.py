@@ -138,3 +138,125 @@ def registry_size() -> int:
 def clear_registry() -> None:
     """پاک‌سازی کامل registry — فقط برای تست و ریست سشن."""
     _REPLIES.clear()
+
+
+# ================================================== [AWAY_TRACE] (Audit)
+# Audit نهایی v0.09.15 — ردیابی هر «ارسال پیام عدم حضور» برای اثبات این
+# که پاسخ Away هرگز وارد سیستم ایموجی ویژه نمی‌شود. این بخش فقط «ثبت»
+# است؛ هیچ رفتار ارسالی را تغییر نمی‌دهد (هیچ قابلیت جدیدی نیست).
+#
+# اتصال واقعی سیستم‌ها (سه نقطه مستقل گزارش می‌دهند):
+#   1) services/away.py            → begin/finalize (ارسال واقعی)
+#   2) premium_emoji_converter.py  → note_pipeline_guard('converter')
+#   3) premium_emoji_injector.py   → note_pipeline_guard('injector')
+#   4) emoji_resend_manager.py     → note_resend_away_skip(message)
+AWAY_TRACE_TTL_SECONDS = 20.0
+_TRACE_LIMIT = 128
+
+# Trace جاری فقط در همان task ارسال معتبر است (کانورتر/اینجکتور داخل
+# همان task اجرا می‌شوند)؛ رویداد outgoing از task دیگر می‌آید و از
+# _TRACES (کلید chat_id/message_id) پیدا می‌شود.
+_CURRENT_TRACE: ContextVar = ContextVar('away_trace_current', default=None)
+_TRACES: "OrderedDict[tuple[int, int], dict]" = OrderedDict()
+
+
+def _prune_traces(now: float | None = None) -> None:
+    now = time.monotonic() if now is None else now
+    expired = [key for key, record in _TRACES.items()
+               if now - record['_stamp'] > AWAY_TRACE_TTL_SECONDS]
+    for key in expired:
+        _TRACES.pop(key, None)
+    while len(_TRACES) > _TRACE_LIMIT:
+        _TRACES.popitem(last=False)
+
+
+def begin_away_trace(chat_id, trigger) -> dict:
+    """شروع Trace برای یک ارسال پاسخ عدم حضور (قبل از away_send_guard).
+
+    خروجی همان record ای است که finalize/fail باید با آن صدا زده شود.
+    """
+    record = {
+        'chat_id': chat_id,
+        'trigger': trigger,
+        'bypass_active': False,
+        'guard_hits': [],
+        'premium_pipeline_entered': False,
+        'resend_entered': False,
+        'resend_note': None,
+        'final_sender': None,
+        'send_error': None,
+        '_stamp': time.monotonic(),
+    }
+    _CURRENT_TRACE.set(record)
+    return record
+
+
+def note_pipeline_guard(system: str) -> None:
+    """ثبت این که گارد AWAY_BYPASS در یک سیستم پریمیوم «برخورد کرد».
+
+    converter/injector در اولین خط wrap خود، وقتی ``away_bypass.active()``
+    برقرار است صدا می‌زنند؛ یعنی پیام پاسخ عدم حضور «دست‌نخورده» از آن
+    سیستم عبور کرد (هیچ تبدیل/Entity ای انجام نشد). هرگز خطا نمی‌دهد.
+    """
+    try:
+        record = _CURRENT_TRACE.get()
+        if record is not None and system not in record['guard_hits']:
+            record['guard_hits'].append(str(system))
+    except Exception:  # noqa: BLE001 - ثبت هرگز مسیر ارسال را نمی‌شکند
+        pass
+
+
+def finalize_away_trace(record, sent_message, final_sender: str) -> dict:
+    """پایان Trace موفق: ثبت فرستنده نهایی و اتصال record به کلید پیام.
+
+    بعد از این مرحله، ``note_resend_away_skip`` (از task رویداد outgoing)
+    می‌تواند همین record را با کلید (chat_id, message_id) پیدا کند.
+    """
+    record['final_sender'] = final_sender
+    record['_stamp'] = time.monotonic()
+    key = _message_key(sent_message)
+    if key is not None:
+        _TRACES[key] = record
+        _prune_traces()
+    _CURRENT_TRACE.set(None)
+    return record
+
+
+def fail_away_trace(record, error: str) -> dict:
+    """پایان Trace ناموفق (ارسال پاسخ شکست خورد) — بدون ثبت پیام."""
+    record['send_error'] = str(error)
+    _CURRENT_TRACE.set(None)
+    return record
+
+
+def note_resend_away_skip(message) -> bool:
+    """اثبات از سمت Premium: مدیر ارسال دوباره پیام Away را «دید و رد کرد».
+
+    services/emoji_resend_manager.py در اولین بررسی handle_outgoing و
+    قبل از هر اقدامی (بررسی سرور/حذف/ارسال جدید) این را صدا می‌زند.
+    خروجی: آیا Trace متناظر پیدا و به‌روزرسانی شد؟
+    """
+    try:
+        if not _TRACES:
+            return False
+        key = _message_key(message)
+        if key is None:
+            return False
+        record = _TRACES.get(key)
+        if record is None:
+            return False
+        record['resend_note'] = ('مدیر ارسال دوباره این پیام را دید و '
+                                 'بدون هیچ اقدامی رد کرد (registry)')
+        return True
+    except Exception:  # noqa: BLE001 - ثبت هرگز مسیر را نمی‌شکند
+        return False
+
+
+def trace_registry_size() -> int:
+    """تعداد Trace های فعال (برای تست/دیاگ)."""
+    return len(_TRACES)
+
+
+def clear_traces() -> None:
+    """پاک‌سازی کامل Trace ها — فقط برای تست."""
+    _TRACES.clear()

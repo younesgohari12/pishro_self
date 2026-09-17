@@ -503,7 +503,12 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
         async def wrapped(*args, **kwargs):
             # 💤 AWAY_BYPASS_PREMIUM: پاسخ عدم حضور هرگز وارد Custom Emoji
             # Pipeline نمی‌شود — بدون تبدیل، بدون Resend، بدون Delete/New Send.
-            if (engine.bypass.get() or away_bypass.active()
+            if away_bypass.active():
+                # [AWAY_TRACE] Audit: گارد برخورد کرد → پیام دست‌نخورده
+                # عبور می‌کند (هیچ تبدیلی انجام نمی‌شود).
+                away_bypass.note_pipeline_guard('converter')
+                return await original(*args, **kwargs)
+            if (engine.bypass.get()
                     or not engine.effective_enabled()):
                 return await original(*args, **kwargs)
             bound = signature.bind(*args, **kwargs)
