@@ -33,6 +33,7 @@ from config import (
     get_tehran_time,
     get_tehran_datetime
 )
+import config
 import db
 from database import models as tabchi_models
 from services.access_service import can_run
@@ -52,7 +53,11 @@ from services.premium_emoji_converter import (
     uninstall_premium_emoji_converter,
     uninstall_premium_emoji_outgoing_injector,
 )
-from services.premium_resend import (
+from services.emoji_resend_manager import (
+    install_emoji_resend_manager,
+    uninstall_emoji_resend_manager,
+)
+from services.premium_resend import (  # سازگاری قدیمی (shim)
     install_premium_resend,
     uninstall_premium_resend,
 )
@@ -89,7 +94,14 @@ from tts.voices import (
 PATTERN_PANEL = re.compile(r'^\.پنل$', re.IGNORECASE)
 PATTERN_CLOSE = re.compile(r'^\.بستن$', re.IGNORECASE)
 PATTERN_AWAY = re.compile(r'^\.away(?:\s+(.+))?$', re.IGNORECASE | re.DOTALL)
+# 🇮🇷 دستورات فارسی — پیام عدم حضور
+PATTERN_AWAY_FA = re.compile(r'^\.عدم_حضور(?:\s+(.+))?$', re.DOTALL)
+PATTERN_AWAY_TEXT_FA = re.compile(r'^\.متن_عدم_حضور(?:\s+(.+))?$', re.DOTALL)
 PATTERN_PREMIUM = re.compile(r'^\.premium(?:\s+(.+))?$', re.IGNORECASE | re.DOTALL)
+# 🇮🇷 دستورات فارسی — ایموجی ویژه
+PATTERN_PREMIUM_FA = re.compile(r'^\.ایموجی_ویژه(?:\s+(.+))?$', re.DOTALL)
+PATTERN_PREMIUM_DEBUG_FA = re.compile(r'^\.بررسی_ایموجی(?:\s+(.+))?$', re.DOTALL)
+PATTERN_PREMIUM_STATUS_FA = re.compile(r'^\.وضعیت_ایموجی\s*$', re.DOTALL)
 PATTERN_INFO = re.compile(r'^\.info$', re.IGNORECASE)
 PATTERN_PING = re.compile(r'^\.ping$', re.IGNORECASE)
 PATTERN_SPAM = re.compile(r'^\.اسپم\s+(\d+)\s+(.+)$', re.IGNORECASE)
@@ -384,10 +396,12 @@ async def _run_connected_self(client, me, uid, sid):
         return _cache['value']
 
     engine = install_premium_emoji_converter(client, account=me, is_enabled=_converter_flag)
-    # 🔁 Premium Resend Mode — ارسال مجدد هوشمند (Copy/Delete/Resend).
-    # بعد از هر پیام خروجی که ایموجی قابل‌نگاشت دارد ولی entity در نسخه
-    # نهایی تلگرام نیست، پیام دقیقاً کپی، با Custom Emoji دوباره ارسال و
-    # پیام اصلی حذف می‌شود. انتخاب پنل (premium_emoji_resend) اولویت دارد.
+    # 🔁 ارسال دوباره ایموجی ویژه (Delete + New Send) — ماژول رسمی:
+    # services/emoji_resend_manager.py
+    # بعد از هر پیام خروجی که ایموجی قابل‌نگاشت دارد ولی Entity واقعی در
+    # نسخه نهایی تلگرام نیست: کپی محتوا → حذف پیام اصلی → ارسال پیام جدید
+    # با Custom Emoji. هیچ Edit ای در این سیستم مجاز نیست.
+    # انتخاب پنل (premium_emoji_resend) اولویت دارد.
     def _resend_flag(_uid=uid, _cache={'value': None, 'at': 0.0}):
         now = time.monotonic()
         if now - _cache['at'] > 2.0:
@@ -399,9 +413,9 @@ async def _run_connected_self(client, me, uid, sid):
                     _cache['at'] = now
         return _cache['value']
 
-    install_premium_resend(client, engine, is_enabled=_resend_flag, owner_id=uid)
-    # 🔧 Post-Send Fix — فقط FALLBACK: پیام‌های خروجی از دستگاه‌های دیگر
-    # (گوشی/اپ رسمی) که از wrapper های بالا عبور نکرده‌اند. قبل از فونت‌هندلر
+    install_emoji_resend_manager(client, engine, is_enabled=_resend_flag, owner_id=uid)
+    # 🔍 Post-Send Fix — هندلر outgoing سیستم ایموجی ویژه: فقط واگذاری به
+    # مدیر ارسال دوباره است و هیچ Edit ای انجام نمی‌دهد. قبل از فونت‌هندلر
     # ثبت می‌شود تا اولویت پردازش با آن باشد.
     install_premium_emoji_outgoing_injector(client, engine)
     tabchi_models.init_custom_emojis_db()
@@ -501,7 +515,7 @@ async def _run_connected_self(client, me, uid, sid):
                 cleanup_tasks=active_cleanup_tasks,
             )
             log_state(event.chat_id, result)
-            await _temp_message(client, event.chat_id, "✅ عملیات بسته شد")
+            await _temp_message(client, event.chat_id, "✅ بستن عملیات انجام شد")
         except Exception as e:
             print(f"⚠️ خطا در بستن عملیات‌ها: {e}")
 
@@ -522,14 +536,14 @@ async def _run_connected_self(client, me, uid, sid):
                 state = '🟢 روشن' if settings['away_enabled'] else '🔴 خاموش'
                 await client.send_message(
                     event.chat_id,
-                    '💤 **Away Message**\n\n'
+                    '💤 **پیام عدم حضور**\n\n'
                     f'وضعیت: {state}\n'
                     f'متن: «{settings["away_text"]}»\n'
                     f'پیام‌گرفته‌ها (تا ریست بعدی): {count}\n\n'
                     'دستورها:\n'
-                    '• `.away on` / `.away off`\n'
-                    '• `.away text <متن جدید>`\n'
-                    '• `.away reset` — ریست لیست ارسال‌شده‌ها',
+                    '• `.عدم_حضور روشن` / `.عدم_حضور خاموش`\n'
+                    '• `.متن_عدم_حضور <متن جدید>`\n'
+                    '• `.away reset` / `.عدم_حضور ریست` — ریست لیست ارسال‌شده‌ها',
                     parse_mode='md',
                 )
                 return
@@ -538,18 +552,18 @@ async def _run_connected_self(client, me, uid, sid):
             if action in ('on', 'روشن'):
                 away_service.set_enabled(uid, True)
                 await client.send_message(event.chat_id,
-                                          '✅ Away روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
+                                          '✅ پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
                                           parse_mode=None)
             elif action in ('off', 'خاموش'):
                 away_service.set_enabled(uid, False)
                 await client.send_message(event.chat_id,
-                                          '⛔️ Away خاموش شد.',
+                                          '⛔️ پیام عدم حضور خاموش شد.',
                                           parse_mode=None)
             elif action in ('text', 'متن'):
                 if not rest.strip():
                     await client.send_message(
                         event.chat_id,
-                        '❌ متن جدید را بعد از دستور بنویسید:\n`.away text سلام، بعداً جواب می‌دهم.`',
+                        '❌ متن جدید را بعد از دستور بنویسید:\n`.متن_عدم_حضور سلام، بعداً جواب می‌دهم.`',
                         parse_mode=None)
                     return
                 try:
@@ -559,27 +573,106 @@ async def _run_connected_self(client, me, uid, sid):
                                               parse_mode=None)
                     return
                 await client.send_message(event.chat_id,
-                                          f'✅ متن Away ذخیره شد.\n\n💤 {saved}',
+                                          f'✅ متن پیام عدم حضور ذخیره شد.\n\n💤 {saved}',
                                           parse_mode=None)
             elif action in ('reset', 'ریست'):
                 count = away_service.reset_sent_users(uid)
                 await client.send_message(
                     event.chat_id,
-                    f'🧹 لیست Away ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
+                    f'🧹 لیست پیام عدم حضور ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
                     parse_mode=None)
             else:
                 await client.send_message(
                     event.chat_id,
-                    '❌ دستور نامعتبر است.\nنمونه: `.away on` | `.away off` | `.away text <متن>` | `.away reset`',
+                    '❌ دستور نامعتبر است.\nنمونه: `.عدم_حضور روشن` | `.عدم_حضور خاموش` | `.متن_عدم_حضور <متن>` | `.عدم_حضور ریست`',
                     parse_mode=None)
         except Exception as e:
             print(f"⚠️ خطا در away: {e}")
 
     # ========================================
-    # 🔍 دستور .premium — کنترل Debug خط لوله Premium Emoji
+    # 💤 دستورات فارسی پیام عدم حضور
+    #    .عدم_حضور روشن|خاموش|ریست   .متن_عدم_حضور <متن>
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_AWAY_FA))
+    async def away_fa_cmd(event):
+        try:
+            args = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            settings = away_service.get_settings(uid)
+            if not args:
+                state = '🟢 روشن' if settings['away_enabled'] else '🔴 خاموش'
+                await client.send_message(
+                    event.chat_id,
+                    f'💤 **پیام عدم حضور**\n\nوضعیت: {state}\n'
+                    f'متن: «{settings["away_text"]}»\n\n'
+                    'دستورها:\n'
+                    '• `.عدم_حضور روشن` / `.عدم_حضور خاموش`\n'
+                    '• `.متن_عدم_حضور <متن جدید>`',
+                    parse_mode='md')
+                return
+            action, _, rest = args.partition(' ')
+            action = action.lower()
+            if action == 'روشن':
+                away_service.set_enabled(uid, True)
+                await client.send_message(
+                    event.chat_id,
+                    '✅ پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
+                    parse_mode=None)
+            elif action == 'خاموش':
+                away_service.set_enabled(uid, False)
+                await client.send_message(event.chat_id,
+                                          '⛔️ پیام عدم حضور خاموش شد.',
+                                          parse_mode=None)
+            elif action == 'ریست':
+                count = away_service.reset_sent_users(uid)
+                await client.send_message(
+                    event.chat_id,
+                    f'🧹 لیست پیام عدم حضور ریست شد ({count} کاربر).',
+                    parse_mode=None)
+            else:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ دستور نامعتبر است.\nنمونه: `.عدم_حضور روشن` | `.عدم_حضور خاموش` | `.متن_عدم_حضور <متن>`',
+                    parse_mode=None)
+        except Exception as e:
+            print(f"⚠️ خطا در عدم_حضور: {e}")
+
+    # ========================================
+    # ✏️ دستور .متن_عدم_حضور — تغییر متن پیام عدم حضور
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_AWAY_TEXT_FA))
+    async def away_text_fa_cmd(event):
+        try:
+            rest = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            if not rest:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ متن جدید را بعد از دستور بنویسید:\n`.متن_عدم_حضور سلام، بعداً جواب می‌دهم.`',
+                    parse_mode=None)
+                return
+            try:
+                saved = away_service.set_text(uid, rest)
+            except ValueError as exc:
+                await client.send_message(event.chat_id, f'❌ {exc}',
+                                          parse_mode=None)
+                return
+            await client.send_message(event.chat_id,
+                                      f'✅ متن پیام عدم حضور ذخیره شد.\n\n💤 {saved}',
+                                      parse_mode=None)
+        except Exception as e:
+            print(f"⚠️ خطا در متن_عدم_حضور: {e}")
+
+    # ========================================
+    # 🔍 دستور .premium — کنترل سیستم ایموجی ویژه
     #    .premium / .premium status / .premium debug on|off
-    #    در حالت Debug همهٔ مراحل ([PREMIUM_CHECK]، fetch سرور، تصمیم
-    #    Resend، نتیجه) به‌صورت زنده در Saved Messages گزارش می‌شود.
+    #    در حالت بررسی همهٔ مراحل ([بررسی ایموجی ویژه]، واکشی سرور،
+    #    تصمیم ارسال دوباره، نتیجه) زنده در Saved Messages گزارش می‌شود.
+    #    نام فارسی: بررسی ایموجی ویژه / وضعیت ایموجی ویژه
     # ========================================
     @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_PREMIUM))
     async def premium_cmd(event):
@@ -592,32 +685,32 @@ async def _run_connected_self(client, me, uid, sid):
             if manager is None:
                 await client.send_message(
                     event.chat_id,
-                    '❌ مدیر Premium Resend روی این حساب نصب نیست.',
+                    '❌ مدیر ارسال دوباره ایموجی ویژه روی این حساب نصب نیست.',
                     parse_mode=None)
                 return
             action, _, _rest = args.partition(' ')
             action = action.lower()
-            if action in ('debug',):
+            if action in ('debug', 'بررسی'):
                 sub = _rest.strip().lower()
                 if sub in ('on', 'روشن', '1'):
                     manager.set_debug_reports(True)
                     await client.send_message(
                         event.chat_id,
-                        '🔧 حالت Debug Premium روشن شد؛ همهٔ مراحل (check، '
-                        'واکشی سرور، تصمیم Resend، نتیجه) در Saved Messages '
+                        '🔧 بررسی ایموجی ویژه روشن شد؛ همهٔ مراحل (بررسی Entity، '
+                        'واکشی سرور، حذف + ارسال جدید، نتیجه) در Saved Messages '
                         'گزارش می‌شود.',
                         parse_mode=None)
                 elif sub in ('off', 'خاموش', '0'):
                     manager.set_debug_reports(False)
                     await client.send_message(
                         event.chat_id,
-                        '⛔️ حالت Debug Premium خاموش شد.',
+                        '⛔️ بررسی ایموجی ویژه خاموش شد.',
                         parse_mode=None)
                 else:
                     state = '🟢 روشن' if manager.debug_reports else '🔴 خاموش'
                     await client.send_message(
                         event.chat_id,
-                        f'🔧 حالت Debug Premium: {state}\n'
+                        f'🔧 بررسی ایموجی ویژه: {state}\n'
                         'استفاده: `.premium debug on` / `.premium debug off`',
                         parse_mode=None)
                 return
@@ -631,20 +724,154 @@ async def _run_connected_self(client, me, uid, sid):
             debug_state = ('🟢 روشن' if manager.debug_reports else '🔴 خاموش')
             await client.send_message(
                 event.chat_id,
-                '🔍 **Premium Emoji Debug**\n\n'
-                f'• Resend Mode: {resend_state}\n'
-                f'• Debug Reports (Saved): {debug_state}\n'
-                f'• Engine Cooldown: '
+                '🔍 **وضعیت ایموجی ویژه**\n\n'
+                f'• ارسال دوباره ایموجی ویژه: {resend_state}\n'
+                f'• بررسی ایموجی ویژه (Saved): {debug_state}\n'
+                f'• Cooldown موتور: '
                 f'{f"{cooldown_left}s مانده" if cooldown_left else "ندارد"}\n\n'
-                f'آمار: ارسال مجدد {stats["resent"]} | حذف {stats["deleted"]} | '
+                f'آمار: حذف + ارسال جدید {stats["resent"]} | حذف {stats["deleted"]} | '
                 f'حفظ {stats["kept"]} | شکست {stats["failed"]}\n\n'
                 'دستورها:\n'
-                '• `.premium debug on` — گزارش زندهٔ مراحل در Saved Messages\n'
-                '• `.premium debug off`'
-                ' — قطع گزارش زنده',
+                '• `.ایموجی_ویژه روشن` / `.ایموجی_ویژه خاموش`\n'
+                '• `.بررسی_ایموجی روشن` / `.بررسی_ایموجی خاموش`\n'
+                '• `.وضعیت_ایموجی` — همین گزارش',
                 parse_mode='md')
         except Exception as e:
             print(f"⚠️ خطا در premium: {e}")
+
+    # ========================================
+    # 🇮🇷 دستور .ایموجی_ویژه — روشن/خاموش کردن ایموجی ویژه (کانورتر)
+    #    .ایموجی_ویژه روشن / .ایموجی_ویژه خاموش
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_PREMIUM_FA))
+    async def premium_fa_cmd(event):
+        try:
+            args = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            action = args.split(' ', 1)[0].lower()
+            if action not in ('روشن', 'خاموش'):
+                await client.send_message(
+                    event.chat_id,
+                    '🎨 **ایموجی ویژه**\n\n'
+                    'استفاده: `.ایموجی_ویژه روشن` / `.ایموجی_ویژه خاموش`\n'
+                    'گزارش وضعیت: `.وضعیت_ایموجی`\n'
+                    'گزارش زندهٔ مراحل: `.بررسی_ایموجی روشن`',
+                    parse_mode='md')
+                return
+            enable = action == 'روشن'
+            engine = getattr(client, '_premium_emoji_converter', None)
+            effective = bool(engine.effective_enabled()) if engine else False
+            db.update_user_settings(uid, {'premium_emoji_converter': enable})
+            if enable and not bool(getattr(config, 'PREMIUM_EMOJI_ENABLED', True)):
+                await client.send_message(
+                    event.chat_id,
+                    '⚠️ کلید اصلی PREMIUM_EMOJI_ENABLED در config خاموش است؛ '
+                    'برای فعال‌شدن ایموجی ویژه ابتدا آن را روشن کنید.',
+                    parse_mode=None)
+                return
+            if enable:
+                await client.send_message(
+                    event.chat_id,
+                    '🎨 ایموجی ویژه روشن شد؛ ایموجی‌های پیام‌های سلف با '
+                    'Custom Emoji واقعی ارسال می‌شوند.\n'
+                    '(ارسال دوباره: پیام اصلی حذف و نسخه جدید ارسال می‌شود — بدون Edit)',
+                    parse_mode=None)
+            else:
+                await client.send_message(
+                    event.chat_id,
+                    '⛔️ ایموجی ویژه خاموش شد.',
+                    parse_mode=None)
+        except Exception as e:
+            print(f"⚠️ خطا در ایموجی_ویژه: {e}")
+
+    # ========================================
+    # 🔬 دستور .بررسی_ایموجی — گزارش زندهٔ مراحل (Premium Debug)
+    #    .بررسی_ایموجی روشن / .بررسی_ایموجی خاموش / .بررسی_ایموجی
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_PREMIUM_DEBUG_FA))
+    async def premium_debug_fa_cmd(event):
+        try:
+            args = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            manager = getattr(client, '_premium_resend_manager', None)
+            if manager is None:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ مدیر ارسال دوباره ایموجی ویژه روی این حساب نصب نیست.',
+                    parse_mode=None)
+                return
+            action = args.split(' ', 1)[0].lower() if args else ''
+            if action == 'روشن':
+                manager.set_debug_reports(True)
+                await client.send_message(
+                    event.chat_id,
+                    '🔧 بررسی ایموجی ویژه روشن شد؛ همهٔ مراحل (بررسی Entity، '
+                    'واکشی سرور، حذف + ارسال جدید، نتیجه) در Saved Messages '
+                    'گزارش می‌شود.',
+                    parse_mode=None)
+            elif action == 'خاموش':
+                manager.set_debug_reports(False)
+                await client.send_message(
+                    event.chat_id,
+                    '⛔️ بررسی ایموجی ویژه خاموش شد.',
+                    parse_mode=None)
+            else:
+                state = '🟢 روشن' if manager.debug_reports else '🔴 خاموش'
+                await client.send_message(
+                    event.chat_id,
+                    f'🔧 بررسی ایموجی ویژه: {state}\n'
+                    'استفاده: `.بررسی_ایموجی روشن` / `.بررسی_ایموجی خاموش`',
+                    parse_mode=None)
+        except Exception as e:
+            print(f"⚠️ خطا در بررسی_ایموجی: {e}")
+
+    # ========================================
+    # 📊 دستور .وضعیت_ایموجی — وضعیت کامل ایموجی ویژه (Premium Status)
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_PREMIUM_STATUS_FA))
+    async def premium_status_fa_cmd(event):
+        try:
+            await event.delete()
+            if not is_self_on():
+                return
+            manager = getattr(client, '_premium_resend_manager', None)
+            if manager is None:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ مدیر ارسال دوباره ایموجی ویژه روی این حساب نصب نیست.',
+                    parse_mode=None)
+                return
+            stats = manager.stats
+            engine = getattr(client, '_premium_emoji_converter', None)
+            cooldown_left = max(0, int(getattr(engine, 'disabled_until', 0))
+                                - time.monotonic()) if engine else 0
+            conv_state = ('🟢 روشن' if engine and engine.effective_enabled()
+                          else '🔴 خاموش')
+            resend_state = ('🟢 روشن' if manager.resend_enabled()
+                            else '🔴 خاموش')
+            debug_state = ('🟢 روشن' if manager.debug_reports else '🔴 خاموش')
+            await client.send_message(
+                event.chat_id,
+                '📊 **وضعیت ایموجی ویژه**\n\n'
+                f'• ایموجی ویژه: {conv_state}\n'
+                f'• ارسال دوباره ایموجی ویژه: {resend_state}\n'
+                f'• بررسی ایموجی ویژه: {debug_state}\n'
+                f'• Cooldown موتور: '
+                f'{f"{cooldown_left}s مانده" if cooldown_left else "ندارد"}\n\n'
+                f'آمار: حذف + ارسال جدید {stats["resent"]} | حذف {stats["deleted"]} | '
+                f'حفظ {stats["kept"]} | شکست {stats["failed"]}\n\n'
+                'روش کار: پیام اصلی حذف و پیام جدید با Custom Emoji ارسال '
+                'می‌شود؛ هیچ Edit ای انجام نمی‌شود.\n\n'
+                'دستورها:\n'
+                '• `.ایموجی_ویژه روشن` / `.ایموجی_ویژه خاموش`\n'
+                '• `.بررسی_ایموجی روشن` / `.بررسی_ایموجی خاموش`',
+                parse_mode='md')
+        except Exception as e:
+            print(f"⚠️ خطا در وضعیت_ایموجی: {e}")
 
     # ========================================
     # 💰 قیمت و تبدیل لحظه‌ای ارز دیجیتال

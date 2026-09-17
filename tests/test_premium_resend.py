@@ -1,12 +1,15 @@
-"""Acceptance tests — Premium Resend Mode (Copy/Delete/Resend) v0.09.13.
+"""Acceptance tests — ارسال دوباره ایموجی ویژه (Delete + New Send) v0.09.13.
 
-سناریوهای الزامی spec مالک، همه آفلاین و بدون شبکه (قرارداد AGENTS.md):
-    1) متن ساده      2) Reply + Entities       3) عکس/مدیا + کپشن
-    4) آلبوم         5) حفظ پیام اصلی در شکست   6) ضد حلقه / cooldown
-    7) خاموشی با پنل/config                    8) اولویت Resend بر edit
+ماتریس تست اجباری spec مالک، همه آفلاین و بدون شبکه (قرارداد AGENTS.md):
+    1) متن            2) Reply           3) عکس با Caption
+    4) ویدیو با Caption  5) آلبوم          6) گروه          7) خصوصی
 
-قاعده مالک: پیام اصلی فقط بعد از ارسال موفق نسخه جدید حذف می‌شود؛ اگر
-ارسال مجدد یا حذف شکست بخورد، پیام اصلی دست‌نخورده می‌ماند.
+نتیجه الزامی هر تست:
+    پیام اول حذف شده + پیام دوم ایجاد شده + Custom Emoji فعال
+
+🔴 قاعده مالک: هیچ EditMessageRequest و هیچ edit_message ای در کل جریان
+مجاز نیست. ترتیب الزامی: کپی محتوا → حذف پیام اصلی → ارسال پیام جدید.
+اگر حذف شکست بخورد، نسخه جدید ارسال نمی‌شود (هیچ‌گاه دو نسخه نمی‌ماند).
 """
 import asyncio
 import copy
@@ -20,7 +23,7 @@ from telethon.sessions import MemorySession
 import config
 import premium_emoji_mapping as mapping_module
 from services import premium_emoji_converter as mod
-from services import premium_resend as rmod
+from services import emoji_resend_manager as rmod
 from services import telegram_logger as tlog
 
 NOW = datetime(2026, 9, 17, tzinfo=timezone.utc)
@@ -51,6 +54,28 @@ class FakeClient:
         self.send_error = None
         self.delete_error = None
         self.entities = {}
+        self.fetch_error = None
+        self.server = {}
+
+    def store(self, message, *, entities=None):
+        self.server[getattr(message, 'id', 0)] = (
+            message if entities is None else NS(
+                id=getattr(message, 'id', 0),
+                chat_id=getattr(message, 'chat_id', CHAT_ID),
+                message=getattr(message, 'message', ''),
+                entities=list(entities),
+                media=getattr(message, 'media', None),
+                reply_to=getattr(message, 'reply_to', None),
+                silent=getattr(message, 'silent', False)))
+
+    async def get_messages(self, entity, ids=None, **kwargs):
+        if self.fetch_error:
+            raise self.fetch_error
+        view = self.server.get(ids)
+        if view is None:
+            # واکشی برای پیام‌های ذخیره‌نشده ناموفق است → تصمیم با نمای event
+            raise RuntimeError('fetch unavailable')
+        return view
 
     async def get_input_entity(self, chat_id):
         return types.InputPeerUser(chat_id, 1)
@@ -66,6 +91,11 @@ class FakeClient:
         if self.send_error:
             raise self.send_error
         self.sends.append(('file', entity, caption, copy.deepcopy(kwargs)))
+        if isinstance(file, (list, tuple)):
+            return [NS(id=900 + len(self.sends) + i,
+                       chat_id=getattr(entity, 'user_id', CHAT_ID),
+                       entities=(kwargs.get('formatting_entities') or [None] * len(file))[i])
+                    for i in range(len(file))]
         return NS(id=900 + len(self.sends), chat_id=getattr(entity, 'user_id', CHAT_ID),
                   entities=kwargs.get('formatting_entities'))
 
@@ -80,7 +110,7 @@ class FakeClient:
 def make_manager(*, is_enabled=lambda: None, engine=None, client=None):
     engine = engine or make_engine()
     client = client or FakeClient()
-    manager = rmod.PremiumResendManager(client, engine, is_enabled=is_enabled)
+    manager = rmod.EmojiResendManager(client, engine, is_enabled=is_enabled)
     return manager, client, engine
 
 
@@ -100,6 +130,12 @@ def custom_ids(entities):
             if isinstance(e, types.MessageEntityCustomEmoji)}
 
 
+@pytest.fixture(autouse=True)
+def _fast(monkeypatch):
+    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
+    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+
+
 # ================================================== gating
 def test_resend_disabled_when_config_hard_off(monkeypatch):
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', False)
@@ -110,7 +146,7 @@ def test_resend_disabled_when_config_hard_off(monkeypatch):
 def test_resend_disabled_when_converter_off(monkeypatch):
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     engine = make_engine(is_enabled=lambda: False)
-    manager = rmod.PremiumResendManager(FakeClient(), engine)
+    manager = rmod.EmojiResendManager(FakeClient(), engine)
     assert manager.resend_enabled() is False
 
 
@@ -127,167 +163,73 @@ def test_resend_panel_choice_priority(monkeypatch):
     assert manager.resend_enabled() is True
 
 
-# ================================================== single text
-def test_resend_single_text_when_entity_missing(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+# ================================================== ماتریس اجباری مالک
+def test_1_text_message_delete_then_new_send(monkeypatch):
+    """۱) متن: پیام اول حذف، پیام دوم با Custom Emoji ایجاد شود."""
     manager, client, _ = make_manager()
-    message = make_message('🔥 سلام', msg_id=10)
+    message = make_message('🔥 تست', msg_id=10)
     verdict = run(manager.handle_outgoing(message))
     assert verdict == 'handled'
+    # ترتیب الزامی: حذف قبل از ارسال
+    assert len(client.deleted) == 1
+    assert client.deleted == [(CHAT_ID, [10])]
     assert len(client.sends) == 1
     kind, entity, text, kwargs = client.sends[0]
     assert kind == 'message'
-    assert text == '🔥 سلام'                       # متن دست‌نخورده
-    assert custom_ids(kwargs.get('formatting_entities')) == {FIRE}
+    assert text == '🔥 تست'                        # متن دست‌نخورده
+    assert custom_ids(kwargs.get('formatting_entities')) == {FIRE}  # فعال
     assert kwargs.get('parse_mode') is None
-    assert client.deleted == [(CHAT_ID, [10])]     # حذف بعد از ارسال موفق
     assert manager.stats['resent'] == 1
     assert manager.stats['deleted'] == 1
 
 
-def test_resend_preserves_reply_and_existing_entities(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+def test_2_reply_delete_then_new_send(monkeypatch):
+    """۲) Reply: حذف + ارسال جدید با حفظ reply و Custom Emoji."""
     manager, client, _ = make_manager()
     bold = types.MessageEntityBold(offset=2, length=4)
     message = make_message('🔥 سلام دنیا', msg_id=11, entities=[bold],
                            reply_to=42)
     verdict = run(manager.handle_outgoing(message))
     assert verdict == 'handled'
+    assert client.deleted == [(CHAT_ID, [11])]
     kind, entity, text, kwargs = client.sends[0]
     assert text == '🔥 سلام دنیا'
-    assert kwargs.get('reply_to') == 42
+    assert kwargs.get('reply_to') == 42              # reply حفظ شد
     fmt = kwargs.get('formatting_entities')
     assert any(isinstance(e, types.MessageEntityBold) for e in fmt)  # فرمت حفظ
-    assert custom_ids(fmt) == {FIRE}                 # ایموجی تبدیل شد
-    assert client.deleted == [(CHAT_ID, [11])]
+    assert custom_ids(fmt) == {FIRE}                 # Custom Emoji فعال
 
 
-def test_resend_media_caption_uses_send_file(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+def test_3_photo_with_caption_delete_then_new_send(monkeypatch):
+    """۳) عکس با Caption: حذف + ارسال فایل جدید با کپشن و Custom Emoji."""
     manager, client, _ = make_manager()
     media = NS(media_key='photo-ref')
     message = make_message('🔥 عکس جدید', msg_id=12, media=media)
-    verdict = run(manager.handle_outgoing(message))
-    assert verdict == 'handled'
+    assert run(manager.handle_outgoing(message)) == 'handled'
+    assert client.deleted == [(CHAT_ID, [12])]
     kind, entity, caption, kwargs = client.sends[0]
     assert kind == 'file'
     assert caption == '🔥 عکس جدید'
     assert custom_ids(kwargs.get('formatting_entities')) == {FIRE}
-    assert client.deleted == [(CHAT_ID, [12])]
 
 
-def test_resend_in_group_and_saved(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+def test_4_video_with_caption_delete_then_new_send(monkeypatch):
+    """۴) ویدیو با Caption: حذف + ارسال فایل جدید با کپشن و Custom Emoji."""
     manager, client, _ = make_manager()
-    # Group
-    group_msg = make_message('😂 گروه', msg_id=20, chat_id=GROUP_ID)
-    assert run(manager.handle_outgoing(group_msg)) == 'handled'
-    # Saved (chat_id = خود حساب)
-    saved_msg = make_message('😂 سیو', msg_id=21, chat_id=8359698350)
-    assert run(manager.handle_outgoing(saved_msg)) == 'handled'
-    assert len(client.sends) == 2
-    assert len(client.deleted) == 2
+    media = NS(media_key='video-ref')
+    message = make_message('🔥 ویدیو جدید', msg_id=13, media=media)
+    assert run(manager.handle_outgoing(message)) == 'handled'
+    assert client.deleted == [(CHAT_ID, [13])]
+    kind, entity, caption, kwargs = client.sends[0]
+    assert kind == 'file'
+    assert caption == '🔥 ویدیو جدید'
+    assert custom_ids(kwargs.get('formatting_entities')) == {FIRE}
 
 
-# ================================================== skip cases
-def test_skip_when_custom_entity_already_present(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
+def test_5_album_delete_then_new_send_as_one_album(monkeypatch):
+    """۵) آلبوم: کل آلبوم یک‌بار حذف و یک‌بار ارسال می‌شود."""
     manager, client, _ = make_manager()
-    custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
-    message = make_message('🔥 سلام', entities=[custom])
-    assert run(manager.handle_outgoing(message)) == 'skipped'
-    assert client.sends == [] and client.deleted == []
-
-
-def test_skip_when_no_mappable_emoji(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-    for text in ('سلام بدون ایموجی', '🙂', ''):
-        assert run(manager.handle_outgoing(
-            make_message(text))) == 'skipped', text
-    assert client.sends == []
-
-
-def test_skip_when_panel_off_or_hard_off(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager(is_enabled=lambda: False)
-    assert run(manager.handle_outgoing(make_message())) == 'skipped'
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', False)
-    assert run(manager.handle_outgoing(make_message())) == 'skipped'
-    assert client.sends == []
-
-
-def test_skip_forward_via_bot_and_action(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-    assert run(manager.handle_outgoing(make_message(fwd=True))) == 'skipped'
-    assert run(manager.handle_outgoing(make_message(via_bot=True))) == 'skipped'
-    assert run(manager.handle_outgoing(make_message(action=True))) == 'skipped'
-    assert client.sends == []
-
-
-# ================================================== failure safety
-def test_original_kept_when_send_fails(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-    client.send_error = RuntimeError('network down')
-    message = make_message('🔥 مهم', msg_id=30)
-    verdict = run(manager.handle_outgoing(message))
-    # 'skipped' یعنی injector مسیر edit (رفتار قبلی) را امتحان می‌کند
-    assert verdict == 'skipped'
-    assert client.deleted == []          # پیام اصلی حذف نشد
-    assert manager.stats['failed'] == 1
-
-
-def test_original_kept_when_delete_fails(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-    client.delete_error = RuntimeError('no rights')
-    message = make_message('🔥 مهم', msg_id=31)
-    verdict = run(manager.handle_outgoing(message))
-    assert verdict == 'handled'
-    assert len(client.sends) == 1        # نسخه جدید ارسال شد
-    assert manager.stats['kept'] == 1    # اما پیام اصلی باقی ماند
-    assert manager.stats['resent'] == 1
-
-
-# ================================================== loop guards
-def test_no_loop_for_resent_message(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-    original = make_message('🔥 سلام', msg_id=40)
-    assert run(manager.handle_outgoing(original)) == 'handled'
-    resent = make_message('🔥 سلام', msg_id=901, entities=[])  # همان نسخه ارسالی
-    calls_before = len(client.sends)
-    assert run(manager.handle_outgoing(resent)) == 'handled'
-    assert len(client.sends) == calls_before          # ارسال دوباره نشد
-    assert client.deleted == [(CHAT_ID, [40])]        # حذف جدید هم نداشت
-
-
-def test_strip_condition_sets_cooldown(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, engine = make_manager()
-    for msg_id in (910, 911):
-        stripped = make_message('🔥', msg_id=msg_id)
-        manager._mark_recent(CHAT_ID, msg_id)
-        assert run(manager.handle_outgoing(stripped)) == 'handled'
-    assert engine.disabled_until > 0                  # cooldown فعال شد
-
-
-def test_cooldown_blocks_resend(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, engine = make_manager()
-    engine.disabled_until = 10 ** 12                  # همیشه در cooldown
-    assert run(manager.handle_outgoing(make_message())) == 'skipped'
-    assert client.sends == []
-
-
-# ================================================== album
-def test_album_resend_as_one_album(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)  # واکشی سرور: بدون انتظار واقعی
-    manager, client, _ = make_manager()
     grouped = 'album-1'
     part1 = make_message('🔥 کپشن آلبوم', msg_id=50, media=NS(m='p1'),
                          grouped_id=grouped, reply_to=7)
@@ -302,21 +244,153 @@ def test_album_resend_as_one_album(monkeypatch):
     assert len(client.sends) == 1                     # یک آلبوم یک‌جا
     kind, entity, captions, kwargs = client.sends[0]
     assert kind == 'file'
-    assert captions == ['🔥 کپشن آلبوم', '']          # فقط قطعه کپشن‌دار
+    assert captions == ['🔥 کپشن آلبوم', '']
     fmt = kwargs.get('formatting_entities')
     flat = []
     for item in (fmt or []):
         flat.extend(item if isinstance(item, (list, tuple)) else [item])
-    assert custom_ids(flat) == {FIRE}                 # کپشن آلبوم تبدیل شد
+    assert custom_ids(flat) == {FIRE}                 # Custom Emoji فعال
     assert kwargs.get('reply_to') == 7                # reply آلبوم حفظ شد
     deleted_ids = sorted(mid for _, mids in client.deleted for mid in mids)
-    assert deleted_ids == [50, 51]                    # هر دو قطعه حذف شد
+    assert deleted_ids == [50, 51]                    # هر دو قطعه حذف شدند
 
 
+def test_6_group_delete_then_new_send(monkeypatch):
+    """۶) گروه: حذف + ارسال جدید در گروه."""
+    manager, client, _ = make_manager()
+    group_msg = make_message('😂 گروه', msg_id=20, chat_id=GROUP_ID)
+    assert run(manager.handle_outgoing(group_msg)) == 'handled'
+    assert client.deleted == [(GROUP_ID, [20])]
+    kind, entity, text, kwargs = client.sends[0]
+    assert text == '😂 گروه'
+    assert custom_ids(kwargs.get('formatting_entities')) == {LAUGH}
+
+
+def test_7_private_and_saved_delete_then_new_send(monkeypatch):
+    """۷) خصوصی/Saved: حذف + ارسال جدید."""
+    manager, client, _ = make_manager()
+    saved_msg = make_message('😂 سیو', msg_id=21, chat_id=8359698350)
+    assert run(manager.handle_outgoing(saved_msg)) == 'handled'
+    assert client.deleted == [(8359698350, [21])]
+    assert len(client.sends) == 1
+    kind, entity, text, kwargs = client.sends[0]
+    assert custom_ids(kwargs.get('formatting_entities')) == {LAUGH}
+
+
+# ================================================== skip cases
+def test_skip_when_custom_entity_already_present(monkeypatch):
+    manager, client, _ = make_manager()
+    custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
+    message = make_message('🔥 سلام', entities=[custom])
+    assert run(manager.handle_outgoing(message)) == 'skipped'
+    assert client.sends == [] and client.deleted == []
+
+
+def test_skip_when_no_mappable_emoji(monkeypatch):
+    manager, client, _ = make_manager()
+    for text in ('سلام بدون ایموجی', '🙂', ''):
+        assert run(manager.handle_outgoing(
+            make_message(text))) == 'skipped', text
+    assert client.sends == []
+    assert client.deleted == []                       # هیچ حذفی هم رخ نداد
+
+
+def test_skip_when_panel_off_or_hard_off(monkeypatch):
+    manager, client, _ = make_manager(is_enabled=lambda: False)
+    assert run(manager.handle_outgoing(make_message())) == 'skipped'
+    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', False)
+    assert run(manager.handle_outgoing(make_message())) == 'skipped'
+    assert client.sends == []
+    assert client.deleted == []
+
+
+def test_skip_forward_via_bot_and_action(monkeypatch):
+    manager, client, _ = make_manager()
+    assert run(manager.handle_outgoing(make_message(fwd=True))) == 'skipped'
+    assert run(manager.handle_outgoing(make_message(via_bot=True))) == 'skipped'
+    assert run(manager.handle_outgoing(make_message(action=True))) == 'skipped'
+    assert client.sends == []
+    assert client.deleted == []
+
+
+# ================================================== failure safety
+def test_no_new_send_when_delete_fails(monkeypatch):
+    """حذف شکست بخورد → نسخه جدید هرگز ارسال نمی‌شود (بدون پیام تکراری)."""
+    manager, client, _ = make_manager()
+    client.delete_error = RuntimeError('no rights')
+    message = make_message('🔥 مهم', msg_id=31)
+    verdict = run(manager.handle_outgoing(message))
+    assert verdict == 'skipped'
+    assert client.sends == []        # هیچ نسخه جدیدی ارسال نشد
+    assert manager.stats['kept'] == 1  # پیام اصلی باقی ماند
+
+
+def test_send_failure_retries_then_rescue_without_entity(monkeypatch):
+    """ارسال شکست بخورد → چند تلاش؛ در نهایت نجات محتوا بدون entity."""
+    monkeypatch.setattr(rmod, 'SEND_RETRY_DELAY_SECONDS', 0.0)
+    manager, client, _ = make_manager()
+    attempts = {'n': 0}
+
+    async def flaky_send(entity, message, **kwargs):
+        attempts['n'] += 1
+        if attempts['n'] <= 3:
+            raise RuntimeError('network down')
+        # تلاش نجات: بدون entity موفق است
+        return NS(id=999, chat_id=CHAT_ID, entities=None)
+
+    client.send_message = flaky_send
+    message = make_message('🔥 مهم', msg_id=30)
+    verdict = run(manager.handle_outgoing(message))
+    assert verdict == 'handled'
+    assert attempts['n'] == 4                        # ۳ تلاش + ۱ نجات
+    assert client.deleted == [(CHAT_ID, [30])]       # اصل حذف شد (ترتیب مالک)
+    assert manager.stats['failed'] == 0              # محتوا نجات یافت
+
+
+def test_total_send_failure_reported(monkeypatch):
+    """حتی نجات محتوا هم شکست بخورد → گزارش [ارسال دوباره] با شکست."""
+    monkeypatch.setattr(rmod, 'SEND_RETRY_DELAY_SECONDS', 0.0)
+    manager, client, _ = make_manager()
+    client.send_error = RuntimeError('network down')
+    message = make_message('🔥 مهم', msg_id=33)
+    verdict = run(manager.handle_outgoing(message))
+    assert verdict == 'skipped'
+    assert manager.stats['failed'] == 1
+    assert client.deleted == [(CHAT_ID, [33])]       # ترتیب مالک: حذف قبل ارسال
+
+
+# ================================================== loop guards
+def test_no_loop_for_resent_message(monkeypatch):
+    manager, client, _ = make_manager()
+    original = make_message('🔥 سلام', msg_id=40)
+    assert run(manager.handle_outgoing(original)) == 'handled'
+    resent = make_message('🔥 سلام', msg_id=901, entities=[])  # همان نسخه ارسالی
+    calls_before = len(client.sends)
+    assert run(manager.handle_outgoing(resent)) == 'handled'
+    assert len(client.sends) == calls_before          # ارسال دوباره نشد
+    assert client.deleted == [(CHAT_ID, [40])]        # حذف جدید هم نداشت
+
+
+def test_strip_condition_sets_cooldown(monkeypatch):
+    manager, client, engine = make_manager()
+    for msg_id in (910, 911):
+        stripped = make_message('🔥', msg_id=msg_id)
+        manager._mark_recent(CHAT_ID, msg_id)
+        assert run(manager.handle_outgoing(stripped)) == 'handled'
+    assert engine.disabled_until > 0                  # cooldown فعال شد
+
+
+def test_cooldown_blocks_resend(monkeypatch):
+    manager, client, engine = make_manager()
+    engine.disabled_until = 10 ** 12                  # همیشه در cooldown
+    assert run(manager.handle_outgoing(make_message())) == 'skipped'
+    assert client.sends == []
+    assert client.deleted == []
+
+
+# ================================================== album keep cases
 def test_album_with_entities_released_without_resend(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
     manager, client, _ = make_manager()
     custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
     part1 = make_message('🔥 کپشن', msg_id=60, media=NS(m='p1'),
@@ -333,46 +407,84 @@ def test_album_with_entities_released_without_resend(monkeypatch):
     assert client.deleted == []
 
 
+def test_album_not_resent_when_any_delete_fails(monkeypatch):
+    """آلبوم: اگر حذف حتی یک قطعه شکست بخورد، آلبوم جدید ارسال نمی‌شود."""
+    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    manager, client, _ = make_manager()
+    part1 = make_message('🔥 کپشن', msg_id=80, media=NS(m='p1'),
+                         grouped_id='album-3')
+    part2 = make_message('', msg_id=81, media=NS(m='p2'), grouped_id='album-3')
+    calls = {'n': 0}
+
+    def flaky_delete(entity, message_ids, **kwargs):
+        calls['n'] += 1
+        if calls['n'] == 2:
+            raise RuntimeError('no rights')
+        client.deleted.append((entity, list(
+            message_ids if isinstance(message_ids, (list, tuple))
+            else [message_ids])))
+
+    client.delete_messages = flaky_delete
+
+    async def scenario():
+        await manager.handle_outgoing(part1)
+        await manager.handle_outgoing(part2)
+        await asyncio.sleep(0.2)
+
+    run(scenario())
+    assert client.sends == []            # آلبوم جدید ارسال نشد (بدون تکرار)
+    assert calls['n'] == 2               # حذف ناقص؛ توقف
+
+
 # ================================================== install / uninstall
 def test_install_requires_converter_engine():
     client = FakeClient()
     engine = make_engine()
     client._premium_emoji_converter = engine
-    manager = rmod.install_premium_resend(client, engine)
+    manager = rmod.install_emoji_resend_manager(client, engine)
     assert manager is client._premium_resend_manager
-    rmod.uninstall_premium_resend(client)
+    rmod.uninstall_emoji_resend_manager(client)
     assert not hasattr(client, '_premium_resend_manager')
 
 
 def test_install_rejects_client_without_converter():
     client = FakeClient()
     engine = make_engine()
-    assert rmod.install_premium_resend(client, engine) is None
+    assert rmod.install_emoji_resend_manager(client, engine) is None
 
 
-# ================================================== log block
+def test_compat_shim_reexports():
+    """shim قدیمی premium_resend همه نمادها را بازنشر می‌کند."""
+    from services import premium_resend as shim
+    assert shim.PremiumResendManager is rmod.EmojiResendManager
+    assert shim.install_premium_resend is rmod.install_emoji_resend_manager
+    assert shim.uninstall_premium_resend is rmod.uninstall_emoji_resend_manager
+
+
+# ================================================== log blocks (فارسی)
 def test_premium_resend_log_block_format():
     block = tlog.format_premium_resend_debug(
-        chat='Group (-777)', message_id=10, converted=True, deleted=True,
-        resent=True)
+        chat='Group (-777)', message_id=10, deleted=True, resent=True,
+        new_message_id=901)
     lines = block.split('\n')
-    assert lines[0] == '[PremiumResend]'
-    assert 'chat: Group (-777)' in lines
-    assert 'message_id: 10' in lines
-    assert 'converted: True' in lines
-    assert 'deleted: True' in lines
-    assert 'resent: True' in lines
-    assert 'reason:' not in lines
+    assert lines[0] == '[ارسال دوباره]'
+    assert 'شناسه چت: Group (-777)' in lines
+    assert 'شناسه پیام: 10' in lines
+    assert 'پیام حذف شد: بله' in lines
+    assert 'پیام جدید ارسال شد: بله (msg=901)' in lines
+    assert 'نتیجه:' not in lines
 
 
 def test_premium_resend_log_block_with_reason():
     block = tlog.format_premium_resend_debug(
-        chat='Saved (1)', message_id=3, converted=True, deleted=False,
-        resent=False, reason='resend failed (RuntimeError)')
-    assert 'reason: resend failed (RuntimeError)' in block.split('\n')
+        chat='Saved (1)', message_id=3, deleted=False, resent=False,
+        reason='حذف پیام اصلی ناموفق بود')
+    assert 'پیام حذف شد: خیر' in block.split('\n')
+    assert 'پیام جدید ارسال شد: خیر' in block.split('\n')
+    assert 'نتیجه: حذف پیام اصلی ناموفق بود' in block.split('\n')
 
 
-# ================================================== integration: injector prefers resend
+# ================================================== integration: injector never edits
 class OfflineClient(TelegramClient):
     """کلاینت واقعی Telethon؛ فقط مرز شبکه شبیه‌سازی شده (مطابق تست‌های پایپ‌لاین)."""
 
@@ -409,29 +521,25 @@ class OfflineClient(TelegramClient):
                 [], [], NOW, 1)
         if isinstance(request, functions.messages.DeleteMessagesRequest):
             self.committed.append(request)
-            return types.messages.AffectedMessages(pts=1, pts_count=1,
-                                                   random_ids=[])
+            return types.messages.AffectedMessages(pts=1, pts_count=1)
         if isinstance(request, functions.messages.EditMessageRequest):
             self.committed.append(request)
-            return types.Updates(
-                [types.UpdateEditMessage(types.Message(
-                    request.id, types.PeerUser(123), date=NOW, out=True,
-                    message=request.message, entities=request.entities), 1, 1)],
-                [], [], NOW, 1)
+            raise AssertionError('EditMessageRequest مطلقاً ممنوع است')
         return None  # _call converts None into the unexpected-request error
 
 
-def test_injector_prefers_resend_over_edit(monkeypatch):
+def test_injector_full_flow_delete_and_new_send(monkeypatch):
+    """پیام «رسیده از گوشی»: حذف + ارسال جدید؛ EditMessageRequest ممنوع."""
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_OUTGOING_FIX', True)
+    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
     client = OfflineClient()
     account = NS(bot=False, premium=True, id=8359698350)
     engine = mod.install_premium_emoji_converter(
         client, account=account, is_enabled=lambda: True)
-    manager = rmod.install_premium_resend(client, engine)
+    manager = rmod.install_emoji_resend_manager(client, engine)
     injector = mod.install_premium_emoji_outgoing_injector(client, engine)
 
-    # پیام «رسیده از گوشی»: بدون entity → باید resend شود نه edit
     message = types.Message(77, types.PeerUser(123), date=NOW, out=True,
                             message='🔥 سلام', entities=[])
     message._input_chat = types.PeerUser(123)   # مطابق الگوی تست‌های پایپ‌لاین
@@ -443,22 +551,23 @@ def test_injector_prefers_resend_over_edit(monkeypatch):
              if isinstance(r, functions.messages.EditMessageRequest)]
     deletes = [r for r in client.committed
                if isinstance(r, functions.messages.DeleteMessagesRequest)]
-    assert len(sends) == 1                            # کپی با entity ارسال شد
+    assert len(sends) == 1                            # نسخه جدید با entity
     assert custom_ids(sends[0].entities) == {FIRE}
     assert len(deletes) == 1                          # پیام اصلی حذف شد
-    assert edits == []                                # edit انجام نشد (resend برنده)
+    assert edits == []                                # edit مطلقاً انجام نشد
+    # ترتیب الزامی مالک: حذف قبل از ارسال
+    kinds = [type(r).__name__ for r in client.committed]
+    assert kinds.index('DeleteMessagesRequest') < kinds.index('SendMessageRequest')
 
 
-def test_injector_edit_fallback_when_resend_off(monkeypatch):
+def test_injector_without_manager_keeps_message_untouched(monkeypatch):
+    """مدیر ارسال دوباره نصب نباشد → پیام دست‌نخورده (هیچ edit، هیچ delete)."""
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_OUTGOING_FIX', True)
     client = OfflineClient()
     account = NS(bot=False, premium=True, id=8359698350)
     engine = mod.install_premium_emoji_converter(
         client, account=account, is_enabled=lambda: True)
-    # پنل: resend خاموش → رفتار قبلی (edit) باید حفظ شود
-    manager = rmod.install_premium_resend(client, engine,
-                                          is_enabled=lambda: False)
     injector = mod.install_premium_emoji_outgoing_injector(client, engine)
     message = types.Message(78, types.PeerUser(123), date=NOW, out=True,
                             message='🔥 سلام', entities=[])
@@ -468,9 +577,20 @@ def test_injector_edit_fallback_when_resend_off(monkeypatch):
              if isinstance(r, functions.messages.EditMessageRequest)]
     sends = [r for r in client.committed
              if isinstance(r, functions.messages.SendMessageRequest)]
-    assert len(edits) == 1
-    assert sends == []
-    assert custom_ids(edits[0].entities) == {FIRE}
+    deletes = [r for r in client.committed
+               if isinstance(r, functions.messages.DeleteMessagesRequest)]
+    assert edits == [] and sends == [] and deletes == []
+
+
+def test_converter_never_wraps_edit_message():
+    """کانورتر هرگز edit_message را wrap نمی‌کند (هیچ Edit در سیستم)."""
+    client = OfflineClient()
+    account = NS(bot=False, premium=True, id=8359698350)
+    engine = mod.install_premium_emoji_converter(
+        client, account=account, is_enabled=lambda: True)
+    assert engine is not None
+    # edit_message باید همان متد اصلی Telethon باشد (بدون wrap)
+    assert 'edit_message' not in engine.originals
 
 
 def test_bot_client_never_gets_resend():
@@ -478,48 +598,4 @@ def test_bot_client_never_gets_resend():
     account = NS(bot=True, premium=False, id=1)
     engine = mod.install_premium_emoji_converter(client, account=account)
     assert engine is None
-    assert rmod.install_premium_resend(client, engine) is None
-
-
-# ================================================== guard: نسخه بدون entity
-def test_original_kept_when_resent_copy_lacks_entity(monkeypatch):
-    """اگر نسخه ارسالی entity نداشت (مثلاً clean retry)، اصل حذف نشود."""
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    manager, client, _ = make_manager()
-
-    def send_without_entities(entity, message, **kwargs):
-        # شبیه‌سازی clean-retry: ارسال بدون entity
-        client.sends.append(('message', entity, message, kwargs))
-        return NS(id=950, chat_id=CHAT_ID, entities=None)
-
-    client.send_message = send_without_entities
-    message = make_message('🔥 مهم', msg_id=70)
-    verdict = run(manager.handle_outgoing(message))
-    assert verdict == 'skipped'          # injector/edit مسیر خودش را می‌رود
-    assert client.deleted == []          # پیام اصلی حذف نشد
-    assert manager.stats['resent'] == 0
-
-
-def test_album_originals_kept_when_no_entity_in_result(monkeypatch):
-    monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
-    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
-    manager, client, _ = make_manager()
-    part1 = make_message('🔥 کپشن', msg_id=80, media=NS(m='p1'),
-                         grouped_id='album-3')
-    part2 = make_message('', msg_id=81, media=NS(m='p2'), grouped_id='album-3')
-
-    async def send_album_without_entities(entity, files, caption=None, **kwargs):
-        client.sends.append(('file', entity, caption, kwargs))
-        return [NS(id=960, chat_id=CHAT_ID, entities=None),
-                NS(id=961, chat_id=CHAT_ID, entities=None)]
-
-    client.send_file = send_album_without_entities
-
-    async def scenario():
-        await manager.handle_outgoing(part1)
-        await manager.handle_outgoing(part2)
-        await asyncio.sleep(0.2)
-
-    run(scenario())
-    assert client.deleted == []          # هر دو اصل حفظ شدند
+    assert rmod.install_emoji_resend_manager(client, engine) is None

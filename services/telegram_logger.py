@@ -194,9 +194,9 @@ def _enqueue(text, chat_ids):
 
 # ---------------------------------------------------------------- anti-spam
 _MIN_INTERVALS = {
-    'converted': 5.0,       # 🎨 Premium Emoji Converted
-    'fallback': 60.0,       # ⚠️ Premium Emoji Fallback
-    'premium_error': 30.0,  # ❌ Premium Emoji Error
+    'converted': 5.0,       # 🎨 ایموجی ویژه تبدیل شد
+    'fallback': 60.0,       # ⚠️ ایموجی ویژه — جایگزین
+    'premium_error': 30.0,  # ❌ خطای ایموجی ویژه
     'post_fix': 5.0,        # 🔧 تزریق entity بعد از ارسال
     'debug': 3.0,           # [PREMIUM DEBUG]
     'custom_debug': 3.0,    # [CustomEmoji] (سپرده مستقل تا بلوک rich سرکوب نشود)
@@ -364,27 +364,25 @@ def send_premium_event(title, fields=None, *, level='INFO', kind='converted',
     return True
 
 
-def format_premium_resend_debug(*, chat, message_id, converted, deleted, resent,
-                                reason=None):
-    """بلوک استاندارد [PremiumResend] مطابق spec مالک:
+def format_premium_resend_debug(*, chat, message_id, deleted, resent,
+                                new_message_id=None, reason=None):
+    """بلوک استاندارد [ارسال دوباره] مطابق spec مالک:
 
-        [PremiumResend]
-        chat: Group (-1001234567890)
-        message_id: 123
-        converted: True
-        deleted: True
-        resent: True
+        [ارسال دوباره]
+        شناسه چت: Group (-1001234567890)
+        شناسه پیام: 123
+        پیام حذف شد: بله
+        پیام جدید ارسال شد: بله (msg=901)
     """
     lines = [
-        '[PremiumResend]',
-        f'chat: {chat}',
-        f'message_id: {message_id}',
-        f'converted: {bool(converted)}',
-        f'deleted: {bool(deleted)}',
-        f'resent: {bool(resent)}',
+        '[ارسال دوباره]',
+        f'شناسه چت: {chat}',
+        f'شناسه پیام: {message_id}',
+        f'پیام حذف شد: {"بله" if deleted else "خیر"}',
+        f'پیام جدید ارسال شد: {"بله" + (f" (msg={new_message_id})" if new_message_id is not None else "") if resent else "خیر"}',
     ]
     if reason:
-        lines.append(f'reason: {reason}')
+        lines.append(f'نتیجه: {reason}')
     return '\n'.join(lines)
 
 
@@ -423,33 +421,33 @@ def format_state_debug(*, closed, chat, old_state):
 
 
 def format_premium_check(*, chat_id, message_id, has_entity, entities,
-                         media_type, reply_to, server_check=None):
-    """بلوک استاندارد [PREMIUM_CHECK] مطابق spec مالک (دور Debug):
+                         media_type, reply_to, result=None, server_check=None):
+    """بلوک استاندارد [بررسی ایموجی ویژه] مطابق spec مالک:
 
-        [PREMIUM_CHECK]
-        chat_id: -1001234567890
-        message_id: 123
-        has_entity: False
-        entities: none
-        media_type: photo
-        reply_to: 7
-        server_check: fetched after 0.5s → no entity → resend
+        [بررسی ایموجی ویژه]
+        شناسه چت: -1001234567890
+        شناسه پیام: 123
+        Entity دارد: خیر
+        نوع پیام: عکس
+        نتیجه: Entity واقعی روی سرور نیست → حذف + ارسال جدید
 
-    شش خط اول دقیقاً همان قالب درخواستی است؛ خط ``server_check`` نتیجه
-    واکشی مجدد پیام از تلگرام (بعد از sleep 0.5s) است و فقط وقتی اضافه
-    می‌شود که مسیر تصمیم Resend اجرا شده باشد.
+    پنج خط اول دقیقاً همان قالب درخواستی است؛ خط ``نتیجه`` جمع‌بندی
+    تصمیم است. ``server_check`` (سازگاری قدیمی) به ``نتیجه`` اضافه می‌شود.
     """
+    if result is None:
+        result = server_check
+    elif server_check:
+        result = f'{result} | {server_check}'
     lines = [
-        '[PREMIUM_CHECK]',
-        f'chat_id: {chat_id}',
-        f'message_id: {message_id}',
-        f'has_entity: {bool(has_entity)}',
-        f'entities: {entities if entities else "none"}',
-        f'media_type: {media_type if media_type else "none"}',
-        f'reply_to: {reply_to if reply_to is not None else "none"}',
+        '[بررسی ایموجی ویژه]',
+        f'شناسه چت: {chat_id}',
+        f'شناسه پیام: {message_id}',
+        f'Entity دارد: {"بله" if has_entity else "خیر"} ({entities if entities else "هیچ"})',
+        f'نوع پیام: {media_type if media_type else "هیچ"}',
+        f'نتیجه: {result if result else "بررسی شد"}',
     ]
-    if server_check:
-        lines.append(f'server_check: {server_check}')
+    if reply_to is not None:
+        lines.append(f'پاسخ به: {reply_to}')
     return '\n'.join(lines)
 
 

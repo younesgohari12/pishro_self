@@ -1,4 +1,4 @@
-"""Away Message — پاسخ خودکار خصوصی هنگام آفلاین بودن مالک.
+"""پیام عدم حضور — پاسخ خودکار خصوصی هنگام آفلاین بودن مالک.
 
 رفتار (مطابق spec مالک):
 - فقط چت خصوصی (Private)؛ گروه/کانال هرگز. بات‌ها و پیام‌های سرویس هرگز.
@@ -8,7 +8,7 @@
   * سقف زمانی AWAY_RESET_HOURS (اختیاری؛ 0 = غیرفعال) گذشته باشد.
 - متن و روشن/خاموش در دیتابیس هر حساب ذخیره می‌شود:
   away_enabled / away_text / away_sent_users
-- کنترل: دستورهای .away on/off/text/reset و پنل (.پنل → 💤 Away Message).
+- کنترل: دستورهای .عدم_حضور روشن/خاموش، .متن_عدم_حضور، .away و پنل (.پنل → 💤 پیام عدم حضور).
 - پاسخ از client.send_message عبور می‌کند؛ یعنی Unified Pipeline و
   Premium Emoji Resend روی آن فعال‌اند و هیچ ارسال مستقیمی وجود ندارد.
 - حلقه‌بندی غیرممکن است: پاسخ‌های Away خودشان در لیست چشم‌پوشی می‌روند و
@@ -63,9 +63,9 @@ def set_text(uid, text: str) -> str:
     """ذخیره متن جدید؛ خروجی متن پاک‌سازی‌شده است. خالی → خطا (ValueError)."""
     cleaned = (text or '').strip()
     if not cleaned:
-        raise ValueError('متن Away خالی است')
+        raise ValueError('متن پیام عدم حضور خالی است')
     if len(cleaned) > AWAY_TEXT_MAX_CHARS:
-        raise ValueError(f'متن Away حداکثر {AWAY_TEXT_MAX_CHARS} کاراکتر است')
+        raise ValueError(f'متن پیام عدم حضور حداکثر {AWAY_TEXT_MAX_CHARS} کاراکتر است')
     db.update_user_settings(int(uid), {'away_text': cleaned})
     return cleaned
 
@@ -268,7 +268,7 @@ def register_away_handlers(client, uid) -> None:
                 pass
             confirm = await client.send_message(
                 event.chat_id,
-                '✅ متن Away ذخیره شد.\n\n💤 ' + saved_text,
+                '✅ متن پیام عدم حضور ذخیره شد.\n\n💤 ' + saved_text,
                 parse_mode=None)
             _ignore_message(client, event.chat_id,
                             getattr(confirm, 'id', None))

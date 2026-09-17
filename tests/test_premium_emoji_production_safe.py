@@ -181,15 +181,24 @@ def test_release_update_flips_legacy_false_to_true_once():
 
 # ------------------------------------------------------- unified pipeline paths
 def test_all_self_client_send_paths_routed_through_pipeline():
-    """هر مسیر ارسال سلف از wrapper کانورتر عبور می‌کند (منبع‌سنجی)."""
+    """هر مسیر ارسال سلف از wrapper کانورتر عبور می‌کند (منبع‌سنجی).
+
+    spec مالک: edit_message عمداً wrap نمی‌شود — در سیستم ایموجی ویژه
+    هیچ Edit ای مجاز نیست (ارسال مجدد = حذف + ارسال جدید).
+    """
     root = Path(__file__).resolve().parents[1]
     converter = (root / 'services' / 'premium_emoji_converter.py').read_text()
-    for method in ('send_message', 'send_file', 'edit_message', '_send_album'):
+    for method in ('send_message', 'send_file', '_send_album'):
         assert f"('{method}'" in converter, method
+    assert "('edit_message'" not in converter  # edit هرگز wrap نمی‌شود
+    # فراخوانی واقعی edit ممنوع (اشاره در docstring آزاد است)
+    assert 'functions.messages.EditMessageRequest(' not in converter
+    assert '.edit_message(' not in converter
     # self.py کانورتر + outgoing fix را روی کلاینت سلف نصب می‌کند
     self_source = (root / 'self.py').read_text()
     assert 'install_premium_emoji_converter(client, account=me' in self_source
     assert 'install_premium_emoji_outgoing_injector(client, engine)' in self_source
+    assert 'install_emoji_resend_manager(client, engine' in self_source
     # مسیرهای سلف: این ماژول‌ها client خود سلف را می‌گیرند (نه بات را)
     for name in ('services/sender.py', 'services/copy_protected.py',
                  'services/media_sender.py', 'services/deleted_handler.py',

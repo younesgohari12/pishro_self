@@ -122,7 +122,7 @@ def test_self_send_conversion_logged_as_success(deliveries):
     client = OfflineClient()
     engine = make_engine(client)
     run(client.send_message(PEER, 'سلام 🔥', parse_mode=None))
-    events_ = [d for d in deliveries if 'Premium Emoji Converted' in d['text']]
+    events_ = [d for d in deliveries if 'ایموجی ویژه تبدیل شد' in d['text']]
     assert events_, 'converted message must produce a SUCCESS report'
     text = events_[-1]['text']
     assert 'Status: SUCCESS' in text
@@ -134,7 +134,7 @@ def test_conversion_report_targets_admin_log_ids(deliveries):
     client = OfflineClient()
     make_engine(client)
     run(client.send_message(PEER, 'سلام 🔥', parse_mode=None))
-    converted = [d for d in deliveries if 'Premium Emoji Converted' in d['text']]
+    converted = [d for d in deliveries if 'ایموجی ویژه تبدیل شد' in d['text']]
     assert converted and converted[-1]['chat_ids'] == [8359698350]
 
 
@@ -178,7 +178,7 @@ def test_entity_creation_logging_matches_mapping_ids(deliveries):
     client = OfflineClient()
     make_engine(client)
     run(client.send_message(PEER, 'سلام 😂', parse_mode=None))
-    converted = [d for d in deliveries if 'Premium Emoji Converted' in d['text']]
+    converted = [d for d in deliveries if 'ایموجی ویژه تبدیل شد' in d['text']]
     assert converted
     assert str(LAUGH) in converted[-1]['text']
     request = next(r for r in client.committed
@@ -187,23 +187,29 @@ def test_entity_creation_logging_matches_mapping_ids(deliveries):
     assert ids == {LAUGH}
 
 
-# ---------------------------------------------------------- 5) edit logging
-def test_edit_message_conversion_logged(deliveries):
+# ---------------------------------------------------------- 5) edit passthrough
+def test_edit_message_is_never_converted_or_wrapped(deliveries):
+    """spec مالک: edit_message در سیستم ایموجی ویژه wrap/تبدیل نمی‌شود.
+
+    هر edit ای که خود کاربر/سایر قابلیت‌ها انجام می‌دهند بدون دخالت
+    ایموجی ویژه عبور می‌کند؛ هیچ entity ای به edit تزریق نمی‌شود.
+    """
     client = OfflineClient()
     make_engine(client)
     sent = run(client.send_message(PEER, 'متن قدیمی', parse_mode=None))
     deliveries.clear()
     run(client.edit_message(PEER, sent.id, 'متن جدید 🔥', parse_mode=None))
+    # edit عبور کرده ولی بدون هیچ تبدیل و بدون بلوک [PREMIUM DEBUG]
     blocks = [d['text'] for d in deliveries if '[PREMIUM DEBUG]' in d['text']]
-    assert blocks and 'Method: edit_message' in blocks[-1]
+    assert blocks == []
     request = next(r for r in client.committed
                    if isinstance(r, functions.messages.EditMessageRequest))
-    assert {e.document_id for e in custom_entities_of(request)} == {FIRE}
+    assert request.message == 'متن جدید 🔥'
+    assert custom_entities_of(request) == []
 
 
-def test_edit_message_entity_not_lost_when_reconverted(deliveries):
-    """RC-B: پیام پرمیوم ویرایش می‌شود؛ اگر همان ایموجی در متن جدید باشد،
-    entity از نو ساخته می‌شود و حذف نمی‌شود."""
+def test_edit_message_passes_through_without_injection(deliveries):
+    """RC-B (بازنویسی): ویرایش پیام پرمیوم بدون تزریق دوباره انجام می‌شود."""
     client = OfflineClient()
     make_engine(client)
     sent = run(client.send_message(PEER, 'سلام 🔥', parse_mode=None))
@@ -212,9 +218,10 @@ def test_edit_message_entity_not_lost_when_reconverted(deliveries):
         if isinstance(r, functions.messages.SendMessageRequest)))
     deliveries.clear()
     edited = run(client.edit_message(sent, 'سلام دوباره 🔥', parse_mode=None))
-    assert custom_entities_of(next(
-        r for r in client.committed
-        if isinstance(r, functions.messages.EditMessageRequest)))
+    request = next(r for r in client.committed
+                   if isinstance(r, functions.messages.EditMessageRequest))
+    # هیچ entity ای به edit تزریق نمی‌شود (بدون Edit در سیستم پریمیوم)
+    assert custom_entities_of(request) == []
     assert edited.message == 'سلام دوباره 🔥'
 
 
@@ -230,7 +237,7 @@ def test_telegram_rejection_logs_fallback_and_sends_original(deliveries):
 
     client.fail = fail_once
     sent = run(client.send_message(PEER, 'سلام 🔥', parse_mode=None))
-    fallbacks = [d for d in deliveries if 'Premium Emoji Fallback' in d['text']]
+    fallbacks = [d for d in deliveries if 'ایموجی ویژه — جایگزین' in d['text']]
     assert fallbacks, 'rejection must produce a fallback report'
     text = fallbacks[-1]['text']
     assert 'Telegram rejected entity' in text
@@ -253,13 +260,13 @@ def test_conversion_failure_logs_error_and_sends_original(deliveries, monkeypatc
 
     monkeypatch.setattr(engine, 'convert', boom)
     sent = run(client.send_message(PEER, 'سلام 🔥', parse_mode=None))
-    errors_ = [d for d in deliveries if 'Premium Emoji Error' in d['text']]
+    errors_ = [d for d in deliveries if 'خطای ایموجی ویژه' in d['text']]
     assert errors_, 'conversion failure must be reported'
     text = errors_[-1]['text']
     assert 'services/premium_emoji_converter.py' in text
     assert 'RuntimeError' in text
     assert 'Original message sent' in [
-        d['text'] for d in deliveries if 'Premium Emoji Fallback' in d['text']][-1]
+        d['text'] for d in deliveries if 'ایموجی ویژه — جایگزین' in d['text']][-1]
     assert sent.message == 'سلام 🔥'
 
 
@@ -269,7 +276,7 @@ def test_send_error_contains_file_line_error(deliveries):
         raise ValueError('MessageEntity invalid')
     except ValueError as exc:
         frame = __import__('traceback').extract_tb(exc.__traceback__)[-1]
-        tlog.send_error('❌ Premium Emoji Error', {
+        tlog.send_error('❌ خطای ایموجی ویژه', {
             'File': 'services/premium_emoji_converter.py',
             'Line': frame.lineno,
             'Error': str(exc),
@@ -366,25 +373,25 @@ def test_debug_block_requires_debug_flag_and_level(monkeypatch, deliveries):
 
 def test_anti_spam_coalesces_repeated_events(deliveries):
     tlog.reset_rate_state()
-    first = tlog.send_premium_event('🎨 Premium Emoji Converted',
+    first = tlog.send_premium_event('🎨 ایموجی ویژه تبدیل شد',
                                     {'Chat': 1}, kind='converted')
-    second = tlog.send_premium_event('🎨 Premium Emoji Converted',
+    second = tlog.send_premium_event('🎨 ایموجی ویژه تبدیل شد',
                                      {'Chat': 1}, kind='converted')
     assert first is True and second is False
-    assert len([d for d in deliveries if 'Converted' in d['text']]) == 1
+    assert len([d for d in deliveries if 'تبدیل شد' in d['text']]) == 1
 
 
 def test_suppressed_counter_appears_on_next_send(deliveries, monkeypatch):
     tlog.reset_rate_state()
-    tlog.send_premium_event('🎨 Premium Emoji Converted', {'Chat': 1},
+    tlog.send_premium_event('🎨 ایموجی ویژه تبدیل شد', {'Chat': 1},
                             kind='converted')
-    tlog.send_premium_event('🎨 Premium Emoji Converted', {'Chat': 1},
+    tlog.send_premium_event('🎨 ایموجی ویژه تبدیل شد', {'Chat': 1},
                             kind='converted')  # suppressed
     with tlog._state_lock:
         tlog._last_sent.pop('converted', None)  # بازه فاصله منقضی شد
-    tlog.send_premium_event('🎨 Premium Emoji Converted', {'Chat': 1},
+    tlog.send_premium_event('🎨 ایموجی ویژه تبدیل شد', {'Chat': 1},
                             kind='converted')
-    last = [d for d in deliveries if 'Converted' in d['text']][-1]['text']
+    last = [d for d in deliveries if 'تبدیل شد' in d['text']][-1]['text']
     assert '(+1 suppressed)' in last
 
 
@@ -403,8 +410,11 @@ def _outgoing_event(message, chat_id=777):
     return NS(message=message, chat_id=chat_id)
 
 
-def test_outgoing_injector_fixes_unconverted_message(deliveries):
-    """RC-A: پیام تایپ‌شده از اپ رسمی (بدون entity) بعد از ارسال پرمیوم می‌شود."""
+def test_outgoing_injector_never_sends_any_request_without_manager(deliveries):
+    """بدون مدیر ارسال دوباره، هندلر outgoing هیچ درخواستی صادر نمی‌کند.
+
+    spec مالک: Edit ممنوع — پیام از اپ رسمی بدون مدیر، دست‌نخورده می‌ماند.
+    """
     client = OfflineClient()
     engine = make_engine(client)
     handler = mod.install_premium_emoji_outgoing_injector(client, engine)
@@ -412,15 +422,8 @@ def test_outgoing_injector_fixes_unconverted_message(deliveries):
                             message='سلام 😂🔥❤️', entities=None)
     message._input_chat = PEER
     run(handler(_outgoing_event(message)))
-    edits = [r for r in client.committed
-             if isinstance(r, functions.messages.EditMessageRequest)]
-    assert len(edits) == 1
-    entities = custom_entities_of(edits[0])
-    assert {e.document_id for e in entities} == {LAUGH, FIRE, HEART}
-    # متن هرگز عوض نمی‌شود؛ فقط entity اضافه می‌شود
-    assert edits[0].message == 'سلام 😂🔥❤️'
-    blocks = [d['text'] for d in deliveries if '[PREMIUM DEBUG]' in d['text']]
-    assert blocks and 'Method: outgoing_fix' in blocks[-1]
+    assert client.committed == []          # هیچ edit/send/delete ای
+    assert deliveries == []                # و هیچ گزارشی
 
 
 def test_outgoing_injector_skips_already_premium_forwards_and_bot_content():
@@ -453,7 +456,8 @@ def test_outgoing_injector_respects_disabled_flag(monkeypatch):
                 if isinstance(r, functions.messages.EditMessageRequest)]
 
 
-def test_outgoing_injector_rejection_sets_cooldown_and_logs_fallback(deliveries):
+def test_outgoing_injector_no_cooldown_no_fallback(deliveries):
+    """هندلر outgoing دیگر هیچ RPC ای انجام نمی‌دهد؛ cooldown هم صادر نمی‌شود."""
     client = OfflineClient()
     engine = make_engine(client)
     handler = mod.install_premium_emoji_outgoing_injector(client, engine)
@@ -466,9 +470,10 @@ def test_outgoing_injector_rejection_sets_cooldown_and_logs_fallback(deliveries)
                             message='سلام 🔥', entities=None)
     message._input_chat = PEER
     run(handler(_outgoing_event(message)))
-    assert engine.disabled_until > 0
-    assert any('Premium Emoji Fallback' in d['text'] for d in deliveries)
-    # بعد از cooldown، پیام بعدی تزریق نمی‌شود
+    assert engine.disabled_until == 0       # هیچ RPC ای انجام نشد
+    assert client.committed == []
+    assert not any('ایموجی ویژه — جایگزین' in d['text'] for d in deliveries)
+    # بعد از آن هم هیچ edit ای وجود ندارد
     client.fail = None
     message2 = types.Message(17, types.PeerUser(123), date=NOW, out=True,
                              message='سلام 🔥', entities=None)
@@ -490,12 +495,13 @@ def test_uninstall_outgoing_injector_removes_handler():
 
 # -------------------------------------------- runtime path audit consistency
 def test_self_send_paths_all_wrapped():
-    """همه متدهای ارسال/ویرایش کلاینت Self باید wrap شده باشند."""
+    """متدهای ارسال کلاینت Self wrap شده‌اند؛ edit_message هرگز wrap نمی‌شود."""
     client = OfflineClient()
     make_engine(client)
     # wrap شدن یعنی تابع ساده روی instance؛ دیگر bound method کلاس نیست
     assert not inspect.ismethod(client.send_message)
     assert not inspect.ismethod(client.send_file)
-    assert not inspect.ismethod(client.edit_message)
+    # edit_message طبق spec مالک عمداً wrap نمی‌شود (هیچ Edit در سیستم)
+    assert inspect.ismethod(client.edit_message)
     # forward_messages طبق قانون هرگز wrap نمی‌شود
     assert inspect.ismethod(client.forward_messages)

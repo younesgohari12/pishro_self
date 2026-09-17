@@ -304,21 +304,27 @@ def test_missing_emoji_never_crashes_pipeline():
 
 
 # ============================== fallback و debug ==============================
-def test_outgoing_fallback_edits_phone_message(deliveries):
-    """پیام رسیده از گوشی: تنها مسیر ممکن edit بعد از ارسال است (fallback)."""
+def test_outgoing_injector_never_edits_phone_message(deliveries):
+    """پیام رسیده از گوشی: هندلر outgoing هیچ edit ای انجام نمی‌دهد.
+
+    طبق spec مالک، مسیر تنها با مدیر ارسال دوباره (حذف + ارسال جدید)
+    است؛ بدون مدیر نصب‌شده، پیام دست‌نخورده می‌ماند.
+    """
     client, engine = make_client()
     handler = mod.install_premium_emoji_outgoing_injector(client, engine)
     phone_message = types.Message(31, types.PeerUser(555), date=NOW, out=True,
                                   message=TEXT, entities=None)
     phone_message._input_chat = PRIVATE_PEER
     run(handler(NS(message=phone_message, chat_id=555)))
-    edit = last_edit_request(client)
-    assert edit.message == TEXT  # متن عوض نشده
-    assert {e.document_id for e in custom_entities_of(edit)} == {LAUGH, FIRE, HEART}
-    blocks = [d['text'] for d in deliveries if d['text'].startswith('[CustomEmoji]')]
-    assert blocks and 'Method: outgoing_fix' in blocks[-1]
-    assert 'Send: EDITED' in blocks[-1]
-    assert 'Chat: Private' in blocks[-1]
+    # هیچ EditMessageRequest و هیچ درخواست شبکه‌ای صادر نشده است
+    assert not [r for r in client.committed
+                if isinstance(r, functions.messages.EditMessageRequest)]
+    assert not [r for r in client.committed
+                if isinstance(r, (functions.messages.SendMessageRequest,
+                                  functions.messages.SendMediaRequest))]
+    blocks = [d['text'] for d in deliveries
+              if 'outgoing_fix' in d['text'] or 'EDITED' in d['text']]
+    assert blocks == []  # هیچ گزارش edit هم صادر نمی‌شود
 
 
 def test_send_failure_reports_failed_status(deliveries):

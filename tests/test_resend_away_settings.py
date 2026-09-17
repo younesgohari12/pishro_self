@@ -1,10 +1,10 @@
-"""Acceptance tests — تنظیمات و پنل برای Resend هوشمند + Away v0.09.13.
+"""Acceptance tests — تنظیمات و پنل برای ارسال دوباره ایموجی ویژه + پیام عدم حضور.
 
 - کلیدهای دیتابیس و نرمال‌سازی (premium_emoji_resend / away_*)
 - زنجیره premium_resend_effective (هم‌راستا با موتور)
-- دکمه‌های پنل اصلی و صفحه Away
+- دکمه‌های پنل اصلی و صفحه پیام عدم حضور
 - کلید config و marker ارتقا
-- الگوی دستورهای .بستن و .away
+- الگوی دستورهای .بستن ، .away و دستورات فارسی
 """
 import pytest
 
@@ -91,8 +91,10 @@ def test_premium_resend_effective_hard_off(monkeypatch):
 def test_main_menu_has_resend_and_away_buttons():
     text, buttons = inline.build_main_menu(UID, 'helperbot')
     flat = [str(b.text) for row in buttons for b in row]
-    assert any('Resend' in t for t in flat)
-    assert any('Away Message' in t for t in flat)
+    assert any('ارسال دوباره ایموجی ویژه' in t for t in flat)
+    assert any('ایموجی ویژه' in t for t in flat)
+    assert any('پیام عدم حضور' in t for t in flat)
+    assert any('بستن عملیات' in t for t in flat)
 
 
 def test_away_menu_builder():
@@ -101,7 +103,7 @@ def test_away_menu_builder():
     assert any('روشن کردن' in t or 'خاموش کردن' in t for t in flat)
     assert any('تغییر متن' in t for t in flat)
     assert any('ریست' in t for t in flat)
-    assert 'Away Message' in text
+    assert 'پیام عدم حضور' in text
     assert db.DEFAULT_AWAY_TEXT[:30] in text or 'متن فعلی' in text
 
 
@@ -139,3 +141,30 @@ def test_close_and_away_patterns():
     assert PATTERN_AWAY.match('.away text سلام بعداً می‌آیم')
     assert PATTERN_AWAY.match('.AWAY OFF')
     assert not PATTERN_AWAY.match('away on')
+
+
+# ================================================== فارسی command patterns
+def test_persian_command_patterns():
+    from self import (PATTERN_AWAY_FA, PATTERN_AWAY_TEXT_FA,
+                      PATTERN_PREMIUM_FA, PATTERN_PREMIUM_DEBUG_FA,
+                      PATTERN_PREMIUM_STATUS_FA)
+    # پیام عدم حضور
+    assert PATTERN_AWAY_FA.match('.عدم_حضور')
+    assert PATTERN_AWAY_FA.match('.عدم_حضور روشن')
+    assert PATTERN_AWAY_FA.match('.عدم_حضور خاموش')
+    m = PATTERN_AWAY_FA.match('.عدم_حضور روشن')
+    assert m.group(1).strip() == 'روشن'
+    # متن عدم حضور
+    assert PATTERN_AWAY_TEXT_FA.match('.متن_عدم_حضور سلام، بعداً جواب می‌دهم')
+    m = PATTERN_AWAY_TEXT_FA.match('.متن_عدم_حضور متن جدید')
+    assert m.group(1).strip() == 'متن جدید'
+    # ایموجی ویژه
+    assert PATTERN_PREMIUM_FA.match('.ایموجی_ویژه روشن')
+    assert PATTERN_PREMIUM_FA.match('.ایموجی_ویژه خاموش')
+    # بررسی ایموجی
+    assert PATTERN_PREMIUM_DEBUG_FA.match('.بررسی_ایموجی')
+    assert PATTERN_PREMIUM_DEBUG_FA.match('.بررسی_ایموجی روشن')
+    assert PATTERN_PREMIUM_DEBUG_FA.match('.بررسی_ایموجی خاموش')
+    # وضعیت ایموجی
+    assert PATTERN_PREMIUM_STATUS_FA.match('.وضعیت_ایموجی')
+    assert PATTERN_PREMIUM_STATUS_FA.match('.وضعیت_ایموجی ')

@@ -244,7 +244,7 @@ def build_away_menu(uid):
         preview = preview[:120] + '…'
     notified = len(settings['away_sent_users'])
     text = (
-        "💤 **Away Message (پیام آفلاین)**\n\n"
+        "💤 **پیام عدم حضور**\n\n"
         f"وضعیت: {'🟢 روشن' if enabled else '🔴 خاموش'}\n"
         f"متن فعلی:\n«{preview}»\n\n"
         f"کاربرانی که پیام گرفته‌اند: **{notified}**\n\n"
@@ -274,15 +274,15 @@ def build_main_menu(uid, main_bot_username):
     else:
         buttons.append([ui.inline_button("🤖 تبچی (ربات اصلی در دسترس نیست)", b"no_tabchi_link", "secondary")])
     buttons += [
-        [ui.inline_button("✨ ایموجی پرمیوم", b"cem_menu", "primary")],
+        [ui.inline_button("✨ ایموجی ویژه", b"cem_menu", "primary")],
         [ui.inline_button(
-            f"🎨 Premium Emoji: {'🟢 روشن' if premium_converter_effective(uid) else '🔴 خاموش'}",
+            f"🎨 ایموجی ویژه: {'🟢 روشن' if premium_converter_effective(uid) else '🔴 خاموش'}",
             b"peconv_toggle", "success" if premium_converter_effective(uid) else "danger")],
         [ui.inline_button(
-            f"🔁 Resend هوشمند: {'🟢 روشن' if premium_resend_effective(uid) else '🔴 خاموش'}",
+            f"🔁 ارسال دوباره ایموجی ویژه: {'🟢 روشن' if premium_resend_effective(uid) else '🔴 خاموش'}",
             b"peresend_toggle", "success" if premium_resend_effective(uid) else "danger")],
         [ui.inline_button(
-            f"💤 Away Message: {'🟢 روشن' if away_service.get_settings(uid)['away_enabled'] else '🔴 خاموش'}",
+            f"💤 پیام عدم حضور: {'🟢 روشن' if away_service.get_settings(uid)['away_enabled'] else '🔴 خاموش'}",
             b"away_menu", "success" if away_service.get_settings(uid)['away_enabled'] else "danger")],
         [ui.inline_button("💰 ارز دیجیتال", b"icrypto_menu", "success")],
         [
@@ -293,7 +293,7 @@ def build_main_menu(uid, main_bot_username):
         [ui.inline_button("🔤 فونت", b"msgfont_menu", "primary")],
         [ui.inline_button("📊 آمار", b"panel_stats", "primary")],
         [ui.inline_button("⚙️ سایر قابلیت‌ها", b"other_features", "secondary")],
-        [ui.inline_button("❌ خروج", b"close", "danger")],
+        [ui.inline_button("❌ بستن عملیات", b"close", "danger")],
     ]
     return text, filter_buttons(buttons)
 
@@ -341,7 +341,7 @@ async def build_inline_crypto_popular(uid):
 
 def build_self_emoji_menu():
     text = (
-        "✨ **Custom Emoji Manager**\n\n"
+        "✨ **ایموجی ویژه**\n\n"
         "استخراج، تست واقعی Entity و مدیریت ایموجی‌های ذخیره‌شده."
     )
     buttons = [
@@ -703,8 +703,8 @@ async def run_inline():
                         'برای فعال‌شدن تبدیل ابتدا آن را روشن کنید.', alert=True)
                 else:
                     await event.answer(
-                        '🎨 Premium Emoji روشن شد؛ ایموجی‌های پیام‌های سلف پرمیوم ارسال می‌شوند.'
-                        if not effective else '🎨 Premium Emoji خاموش شد.',
+                        '🎨 ایموجی ویژه روشن شد؛ ایموجی‌های پیام‌های سلف پرمیوم ارسال می‌شوند.'
+                        if not effective else '🎨 ایموجی ویژه خاموش شد.',
                         alert=True)
                 text, buttons = build_main_menu(uid, main_bot_username)
                 await event.edit(text, buttons=buttons, parse_mode='md')
@@ -717,13 +717,13 @@ async def run_inline():
                         'ابتدا آن را در config روشن کنید.', alert=True)
                 elif not premium_converter_effective(uid):
                     await event.answer(
-                        '⚠️ ابتدا Premium Emoji را روشن کنید؛ Resend بدون تبدیل معنا ندارد.',
+                        '⚠️ ابتدا ایموجی ویژه را روشن کنید؛ ارسال دوباره بدون تبدیل معنا ندارد.',
                         alert=True)
                 else:
                     await event.answer(
-                        '🔁 Resend هوشمند روشن شد؛ پیام‌هایی که entity خود را از دست می‌دهند '
-                        'کپی و با Custom Emoji دوباره ارسال می‌شوند.'
-                        if not effective else '🔁 Resend هوشمند خاموش شد؛ مسیر edit قبلی فعال می‌ماند.',
+                        '🔁 ارسال دوباره ایموجی ویژه روشن شد؛ پیام‌هایی که Entity خود را ندارند '
+                        'حذف و نسخه جدید با Custom Emoji ارسال می‌شود (بدون Edit).'
+                        if not effective else '🔁 ارسال دوباره ایموجی ویژه خاموش شد.',
                         alert=True)
                 text, buttons = build_main_menu(uid, main_bot_username)
                 await event.edit(text, buttons=buttons, parse_mode='md')
@@ -734,15 +734,15 @@ async def run_inline():
                 settings = away_service.get_settings(uid)
                 away_service.set_enabled(uid, not settings['away_enabled'])
                 await event.answer(
-                    '💤 Away روشن شد؛ پاسخ خودکار فقط در چت خصوصی و یک بار برای هر کاربر.'
-                    if not settings['away_enabled'] else '💤 Away خاموش شد.',
+                    '💤 پیام عدم حضور روشن شد؛ پاسخ خودکار فقط در چت خصوصی و یک بار برای هر کاربر.'
+                    if not settings['away_enabled'] else '💤 پیام عدم حضور خاموش شد.',
                     alert=True)
                 text, buttons = build_away_menu(uid)
                 await event.edit(text, buttons=buttons, parse_mode='md')
             elif d == "away_text_change":
                 away_service.begin_text_capture(uid)
                 await event.edit(
-                    "✏️ **متن جدید Away را در همین چت ارسال کنید.**\n\n"
+                    "✏️ **متن جدید پیام عدم حضور را در همین چت ارسال کنید.**\n\n"
                     "• متن ساده ارسال شود (بدون فرمت)\n"
                     "• حداکثر ۵۰۰ کاراکتر\n"
                     "• برای لغو، دکمه زیر یا دستور `.بستن`",
@@ -789,7 +789,7 @@ async def run_inline():
             elif d == "cem_extract":
                 tabchi_models.set_custom_emoji_flow(uid, 'self', 'extract')
                 await event.edit(
-                    "✨ **پیام دارای ایموجی پرمیوم را ارسال کنید.**\n\n"
+                    "✨ **پیام دارای ایموجی ویژه را ارسال کنید.**\n\n"
                     "متن، عکس+کپشن، ویدیو+کپشن و فایل+کپشن پشتیبانی می‌شود.",
                     buttons=[[ui.inline_button("↩️ لغو", b"cem_menu", "secondary")]],
                     parse_mode='md',

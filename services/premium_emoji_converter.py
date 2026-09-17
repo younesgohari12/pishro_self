@@ -43,7 +43,7 @@ from contextvars import ContextVar
 from functools import wraps
 
 import config
-from telethon import errors, events, functions, utils
+from telethon import errors, events, utils
 from telethon.tl import types
 from telethon.tl.types import Message, MessageEntityCustomEmoji
 
@@ -171,7 +171,7 @@ def _emit_success_report(engine, meta):
     record = meta.get('conversion') or {}
     document_ids = record.get('document_ids') or []
     tlog.send_premium_event(
-        '🎨 Premium Emoji Converted',
+        '🎨 ایموجی ویژه تبدیل شد',
         {
             'User': engine.owner_id,
             'Chat': meta.get('chat_id'),
@@ -475,12 +475,14 @@ class PremiumEmojiConverter:
 def install_premium_emoji_converter(client, *, account, is_enabled=None):
     """Install once, only on a verified non-bot (user/self) account.
 
-    Unified Pipeline (مسیر اصلی): send_message/send_file(caption)/edit_message/
-    _send_album are wrapped PRE-SEND so replies, AI answers, auto replies,
-    translation, crypto, tabchi, command and scheduler outputs — which all
-    delegate to these Telethon methods — leave the client with real
+    Unified Pipeline (مسیر اصلی): send_message/send_file(caption)/_send_album
+    are wrapped PRE-SEND so replies, AI answers, auto replies, translation,
+    crypto, tabchi, command and scheduler outputs — which all delegate to
+    these Telethon methods — leave the client with real
     MessageEntityCustomEmoji entities from the first byte on the wire.
-    forward_messages is deliberately NOT wrapped.
+    forward_messages is deliberately NOT wrapped; edit_message is deliberately
+    NOT wrapped either — طبق spec مالک، در سیستم ایموجی ویژه هیچ Edit ای
+    وجود ندارد (ارسال مجدد فقط حذف + ارسال جدید است).
     """
     if getattr(account, 'bot', None) is not False:
         return None
@@ -502,13 +504,6 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                 return await original(*args, **kwargs)
             bound = signature.bind(*args, **kwargs)
             target = field
-            if method == 'edit_message':
-                peer = bound.arguments.get('entity')
-                if isinstance(peer, (types.InputBotInlineMessageID,
-                                     types.InputBotInlineMessageID64)):
-                    return await original(*args, **kwargs)
-                if isinstance(peer, Message):
-                    target = 'message'  # edit_message(message_object, new_text)
             if method in ('send_message', 'send_file') and utils.is_list_like(
                     bound.arguments.get('file')):
                 return await original(*args, **kwargs)  # albums: _send_album handles
@@ -517,9 +512,6 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
             supplied = bound.arguments.get('formatting_entities')
             parse_mode = bound.arguments.get('parse_mode', ())
             peer = bound.arguments.get('entity')
-            if isinstance(peer, Message):
-                # edit_message(message_object, new_text): نوع چت از خود پیام
-                peer = getattr(peer, 'peer_id', None) or getattr(peer, 'input_chat', None)
             meta = {'method': method,
                     'chat_id': _safe_chat_id(peer),
                     'chat_type': _chat_kind(peer),
@@ -573,7 +565,7 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                 except Exception:  # noqa: BLE001
                     line_number = None
                 tlog.send_error(
-                    '❌ Premium Emoji Error',
+                    '❌ خطای ایموجی ویژه',
                     {
                         'File': CONVERTER_MODULE,
                         'Line': line_number,
@@ -582,7 +574,7 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                     },
                     where=CONVERTER_MODULE)
                 tlog.send_premium_event(
-                    '⚠️ Premium Emoji Fallback',
+                    '⚠️ ایموجی ویژه — جایگزین',
                     {
                         'Reason': f'conversion failed ({type(exc).__name__})',
                         'Action': 'Original message sent',
@@ -611,7 +603,7 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                     # message exactly as the caller produced it. No duplicates.
                     engine.disabled_until = time.monotonic() + REJECTION_COOLDOWN_SECONDS
                     tlog.send_premium_event(
-                        '⚠️ Premium Emoji Fallback',
+                        '⚠️ ایموجی ویژه — جایگزین',
                         {
                             'Reason': f'Telegram rejected entity ({type(exc).__name__})',
                             'Action': 'Original message sent',
@@ -658,7 +650,7 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
         return wrapped
 
     for method, field in (('send_message', 'message'), ('send_file', 'caption'),
-                          ('edit_message', 'text'), ('_send_album', 'caption')):
+                          ('_send_album', 'caption')):
         original = getattr(client, method, None)
         if callable(original) and field in inspect.signature(original).parameters:
             engine.originals[method] = original
@@ -668,21 +660,22 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
 
 
 def install_premium_emoji_outgoing_injector(client, engine):
-    """Fallback پس از ارسال (Post-Send Fix) — فقط روی کلاینت Self نصب می‌شود.
+    """هندلر outgoing سیستم ایموجی ویژه — فقط روی کلاینت Self نصب می‌شود.
 
-    ⚠️ این مسیر فقط FALLBACK است؛ مسیر اصلی، تبدیل «قبل از ارسال» توسط
-    install_premium_emoji_converter است. این هندلر فقط برای پیام‌هایی است که
-    از دستگاه دیگری (گوشی/اپ رسمی) ارسال شده‌اند و فیزیکی از wrapper های
-    کلاینت پایتون عبور نکرده‌اند: پیام خروجی رسیده بررسی می‌شود و اگر ایموجی
-    قابل‌نگاشتِ بدون entity دارد، همان متن با MessageEntityCustomEmoji دقیق
-    edit می‌کند (متن عوض نمی‌شود؛ glyph عوض نمی‌شود؛ فقط entity اضافه می‌شود).
+    ⚠️ این هندلر «فقط» پیام خروجی را به مدیر ارسال دوباره ایموجی ویژه
+    (services/emoji_resend_manager.py) می‌سپارد. مسیر اصلی، تبدیل «قبل از
+    ارسال» توسط install_premium_emoji_converter است؛ برای پیام‌هایی که از
+    دستگاه دیگری (گوشی/اپ رسمی) ارسال شده‌اند، جریان رسمی این است:
+
+        بررسی Entity واقعی → Entity نبود؟ → کپی → حذف پیام اصلی
+        → ارسال پیام جدید با Custom Emoji Entity
+
+    🔴 طبق spec مالک: EditMessage ممنوع. این هندلر هیچ‌وقت و به هیچ شکل
+    edit_message / EditMessageRequest صدا نمی‌زند؛ اگر مدیر ارسال دوباره
+    نصب نباشد یا پیام موضوع آن نباشد، پیام اصلی دست‌نخورده می‌ماند.
 
     هرگز اجرا نمی‌شود روی: forward ها، پیام‌های via_bot (پنل اینلاین = محتوای
-    ربات)، سرویس/اکشن‌ها، پیام‌هایی که قبلاً Custom Emoji دارند، وقتی کانورتر
-    خاموش یا در cooldown است. کلاینت Bot هرگز این هندلر را نمی‌گیرد.
-    هر خطا (رد entity، عدم دسترسی edit، مشکل پیگیری Message ID و ...) با
-    دلیل دقیق و نوع چت به ربات گزارش Admin ارسال می‌شود — هیچ شکست بی‌صدایی
-    وجود ندارد.
+    ربات)، سرویس/اکشن‌ها. کلاینت Bot هرگز این هندلر را نمی‌گیرد.
     """
     if getattr(client, '_premium_emoji_outgoing_injector', None) is not None:
         return client._premium_emoji_outgoing_injector
@@ -702,101 +695,18 @@ def install_premium_emoji_outgoing_injector(client, engine):
                 return  # forward_messages: طبق قانون هرگز دست‌نخورده
             if getattr(message, 'via_bot_id', None):
                 return  # پیام‌های پنل اینلاین: محتوای ربات، مستقل از کانورتر
-            # 🔁 Premium Resend Mode (Copy/Delete/Resend) — اولویت با ارسال
-            # مجدد هوشمند است؛ فقط اگر این ماژول پیام را نگرفت، مسیر edit
-            # (رفتار قبلی) ادامه می‌یابد. هر دو حالت سقوط امن دارند.
+            # 🔁 ارسال دوباره ایموجی ویژه (Delete + New Send) — تنها مسیر
+            # این هندلر. هیچ Edit ای وجود ندارد؛ اگر مدیر ارسال دوباره
+            # پیام را نگرفت، پیام اصلی همان‌طور که هست می‌ماند.
             resend = getattr(client, '_premium_resend_manager', None)
-            if resend is not None:
-                try:
-                    verdict = await resend.handle_outgoing(message)
-                except Exception:  # noqa: BLE001 - resend هرگز edit را نشکند
-                    verdict = 'skipped'
-                if verdict == 'handled':
-                    return
-            text = getattr(message, 'message', None)
-            if not isinstance(text, str) or not text or len(text) > MAX_MESSAGE_CHARS:
+            if resend is None:
                 return
-            existing = list(getattr(message, 'entities', None) or [])
-            if any(isinstance(e, MessageEntityCustomEmoji) for e in existing):
-                return  # همین حالا پرمیوم است؛ idempotency
-            if not custom.EMOJI_PATTERN.search(text):
-                return
-            if not engine.effective_enabled() or time.monotonic() < engine.disabled_until:
-                return
-            updated, merged = engine.convert(text, existing)
-            added = _new_custom_entities(merged, existing)
-            if not added:
-                return  # هیچ نگاشت دقیقی موجود نیست؛ همان ایموجی معمولی می‌ماند
-            chat_id = getattr(event, 'chat_id', None)
-            peer = getattr(message, 'input_chat', None)
-            if isinstance(peer, types.InputPeerSelf):
-                chat_type = 'Saved'
-            else:
-                chat_type = _chat_kind(peer if peer is not None
-                                       else getattr(message, 'peer_id', None))
-                if chat_type == 'Unknown' and chat_id is not None:
-                    # اگر پیام به Saved خودم رسیده باشد، chat_id برابر id خودم است.
-                    chat_type = 'Saved' if chat_id == getattr(
-                        client, '_self_id', None) else _chat_kind(chat_id)
-            meta = {'method': 'outgoing_fix', 'chat_id': chat_id,
-                    'chat_type': chat_type,
-                    'conversion': _conversion_record(updated, added)}
-            if peer is None:
-                try:
-                    peer = await client.get_input_entity(chat_id)
-                except (ValueError, TypeError) as exc:
-                    # علت دقیق در گزارش می‌آید؛ پیام دست‌نخورده می‌ماند.
-                    tlog.send_premium_event(
-                        '⚠️ Premium Emoji Fallback',
-                        {
-                            'Reason': f'resolve chat failed ({type(exc).__name__})',
-                            'Action': 'Original message kept (post-send fix skipped)',
-                            'Method': 'outgoing_fix',
-                            'Chat': chat_id,
-                            'Chat Type': chat_type,
-                        },
-                        level='WARNING', kind='fallback')
-                    return
-            # فراخوانی مستقیم RPC: از wrap های send/edit عبور نمی‌کند تا
-            # نه تزریق دوم رخ دهد و نه تبدیل دوگانه (idempotent).
-            await client(functions.messages.EditMessageRequest(
-                peer=peer, id=message.id, message=updated, entities=merged or None))
-            _emit_premium_debug_block(meta, meta['conversion'])
-            _emit_custom_emoji_block(meta, entity_status='CREATED',
-                                     send_status='EDITED')
-            _emit_success_report(engine, meta)
-        except REJECTED_ERRORS as exc:
-            # تلگرام entity را رد کرد: cooldown + گزارش fallback (دلیل همان لحظه)
-            engine.disabled_until = time.monotonic() + REJECTION_COOLDOWN_SECONDS
-            tlog.send_premium_event(
-                '⚠️ Premium Emoji Fallback',
-                {
-                    'Reason': f'Telegram rejected entity ({type(exc).__name__})',
-                    'Action': 'Original message kept (post-send fix skipped)',
-                    'Cooldown': f'{REJECTION_COOLDOWN_SECONDS}s',
-                    'Method': 'outgoing_fix',
-                    'Chat': getattr(event, 'chat_id', None),
-                },
-                level='WARNING', kind='fallback')
-        except (errors.MessageNotModifiedError, errors.MessageIdInvalidError,
-                errors.MessageAuthorRequiredError):
-            return  # رقابت با edit های دیگر؛ پیام سالم است
-        except Exception as exc:  # noqa: BLE001 - هیچ‌وقت پیام‌رسانی را نشکند
             try:
-                frame = traceback.extract_tb(exc.__traceback__)[-1]
-                line_number = frame.lineno
-            except Exception:  # noqa: BLE001
-                line_number = None
-            tlog.send_error(
-                '❌ Premium Emoji Error',
-                {
-                    'File': CONVERTER_MODULE,
-                    'Line': line_number,
-                    'Method': 'outgoing_fix',
-                    'Error': f'{type(exc).__name__}: {exc}',
-                    'Chat': getattr(event, 'chat_id', None),
-                },
-                where=CONVERTER_MODULE)
+                await resend.handle_outgoing(message)
+            except Exception:  # noqa: BLE001 - resend هرگز پیام‌رسانی را نشکند
+                return  # پیام اصلی دست‌نخورده می‌ماند؛ هیچ edit مجاز نیست
+        except Exception:  # noqa: BLE001 - هیچ‌وقت پیام‌رسانی را نشکند
+            return
 
     client._premium_emoji_outgoing_injector = _outgoing_premium_fix
     return _outgoing_premium_fix

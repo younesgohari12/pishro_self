@@ -299,11 +299,12 @@ def test_album_captions_convert_independently():
     run(scenario())
 
 
-def test_edit_message_converts_and_reply_respond_covered():
+def test_edit_message_passthrough_and_reply_respond_covered():
     async def scenario():
         client = OfflineClient()
+        # edit_message عمداً wrap نمی‌شود: متن جدید بدون تزریق entity ویرایش می‌شود
         edited = await client.edit_message(PEER, 17, 'متن جدید 🔥', parse_mode=None)
-        assert edited.message == 'متن جدید 🔥' and len(custom_entities(edited)) == 1
+        assert edited.message == 'متن جدید 🔥' and len(custom_entities(edited)) == 0
         message = types.Message(11, types.PeerUser(123), date=NOW, message='input', out=True)
         message._finish_init(client, {}, PEER)
         for method in ('reply', 'respond'):
@@ -430,7 +431,7 @@ def test_panel_has_premium_emoji_toggle_button():
     flat = [btn for row in buttons for btn in row]
     toggle = [b for b in flat if getattr(b, 'data', b'') == b'peconv_toggle']
     assert len(toggle) == 1
-    assert 'Premium Emoji' in toggle[0].text and 'خاموش' in toggle[0].text
+    assert 'ایموجی ویژه' in toggle[0].text and 'خاموش' in toggle[0].text
     db.update_user_settings(uid, {'premium_emoji_converter': True})
     _, buttons_on = inline_panel.build_main_menu(uid, 'panel_bot')
     toggle_on = [b for row in buttons_on for b in row

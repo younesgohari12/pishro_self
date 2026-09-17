@@ -1,11 +1,11 @@
-"""Debug-round tests — [PREMIUM_CHECK] + server-truth Resend + Album Queue.
+"""Debug-round tests — [بررسی ایموجی ویژه] + Server-Truth Resend + Album Queue.
 
-دور Debug نسخه PREMIUM_RESEND_CLOSE_AWAY — سناریوهای الزامی spec مالک:
-    1) بلوک [PREMIUM_CHECK] با شش فیلد دقیق + خط server_check
-    2) بعد از send_message → sleep 0.5s → client.get_messages → بررسی Entity
-    3) Resend فقط وقتی Entity در نسخهٔ «سرور» نیست
-    4) آلبوم: صف قطعات → واکشی همه → «یک بار» Resend کل آلبوم
-    5) `.premium debug on` → گزارش زندهٔ مراحل در Saved Messages (+ ignore)
+سناریوهای الزامی spec مالک (حذف + ارسال جدید؛ بدون Edit):
+    1) بلوک [بررسی ایموجی ویژه] با پنج فیلد دقیق
+    2) بررسی Entity واقعی → client.get_messages (نمای سرور)
+    3) Entity نبود؟ → کپی → حذف پیام اصلی → ارسال پیام جدید با entity
+    4) آلبوم: صف قطعات → واکشی همه → «یک بار» حذف/ارسال کل آلبوم
+    5) `.بررسی_ایموجی روشن` → گزارش زندهٔ مراحل در Saved Messages (+ ignore)
 
 همه آفلاین و بدون شبکه (قرارداد AGENTS.md). FakeClient مرز شبکه را
 شبیه‌سازی می‌کند: get_messages نمای «سرور» را برمی‌گرداند.
@@ -20,7 +20,7 @@ from telethon import types
 import config
 import premium_emoji_mapping as mapping_module
 from services import premium_emoji_converter as mod
-from services import premium_resend as rmod
+from services import emoji_resend_manager as rmod
 from services import telegram_logger as tlog
 
 FIRE = mapping_module.PREMIUM_EMOJI_MAP['🔥'][0]
@@ -124,7 +124,7 @@ class FakeClient:
 def make_manager(*, is_enabled=lambda: None, engine=None, client=None):
     engine = engine or make_engine()
     client = client or FakeClient()
-    manager = rmod.PremiumResendManager(client, engine, is_enabled=is_enabled)
+    manager = rmod.EmojiResendManager(client, engine, is_enabled=is_enabled)
     return manager, client, engine
 
 
@@ -151,47 +151,48 @@ def _fast_and_silent(monkeypatch):
     monkeypatch.setattr(tlog, 'logging_enabled', lambda: False)
 
 
-# ================================================== [PREMIUM_CHECK] format
+# ================================================== [بررسی ایموجی ویژه] format
 def test_premium_check_block_exact_fields():
     block = tlog.format_premium_check(
-        chat_id=-100123, message_id=42, has_entity=False, entities='none',
-        media_type='photo', reply_to=7)
+        chat_id=-100123, message_id=42, has_entity=False, entities='هیچ',
+        media_type='عکس', reply_to=7)
     lines = block.split('\n')
-    assert lines[0] == '[PREMIUM_CHECK]'
-    assert lines[1] == 'chat_id: -100123'
-    assert lines[2] == 'message_id: 42'
-    assert lines[3] == 'has_entity: False'
-    assert lines[4] == 'entities: none'
-    assert lines[5] == 'media_type: photo'
-    assert lines[6] == 'reply_to: 7'
-    assert len(lines) == 7                      # بدون server_check خط اضافه نیست
+    assert lines[0] == '[بررسی ایموجی ویژه]'
+    assert lines[1] == 'شناسه چت: -100123'
+    assert lines[2] == 'شناسه پیام: 42'
+    assert lines[3] == 'Entity دارد: خیر (هیچ)'
+    assert lines[4] == 'نوع پیام: عکس'
+    assert lines[5] == 'نتیجه: بررسی شد'
+    assert lines[6] == 'پاسخ به: 7'
 
 
-def test_premium_check_block_with_server_check():
+def test_premium_check_block_with_result():
     block = tlog.format_premium_check(
-        chat_id=1, message_id=2, has_entity=True, entities='1: custom(doc=9@0+2)',
-        media_type='none', reply_to='none',
-        server_check='fetched after 0.5s → has_entity=False')
+        chat_id=1, message_id=2, has_entity=True,
+        entities='1: ویژه(doc=9@0+2)', media_type='متن', reply_to=None,
+        result='Entity واقعی روی سرور موجود است؛ بدون تغییر')
     lines = block.split('\n')
-    assert lines[7] == 'server_check: fetched after 0.5s → has_entity=False'
+    assert lines[3] == 'Entity دارد: بله (1: ویژه(doc=9@0+2))'
+    assert lines[5] == 'نتیجه: Entity واقعی روی سرور موجود است؛ بدون تغییر'
+    assert 'پاسخ به' not in block
 
 
 def test_media_type_detection():
     photo = type('MessageMediaPhoto', (), {})()
-    assert rmod._media_type(make_message(media=photo)) == 'photo'
-    assert rmod._media_type(make_message()) == 'none'
+    assert rmod._media_type(make_message(media=photo)) == 'عکس'
+    assert rmod._media_type(make_message()) == 'متن'
     doc_media = type('MessageMediaDocument', (), {})()
-    assert rmod._media_type(make_message(media=doc_media)) == 'document'
+    assert rmod._media_type(make_message(media=doc_media)) == 'فایل'
 
 
 def test_describe_entities_format():
     custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
     assert rmod._describe_entities([custom]) == \
-        f'1: custom(doc={FIRE}@0+2)'
-    assert rmod._describe_entities(None) == 'none'
+        f'1: ویژه(doc={FIRE}@0+2)'
+    assert rmod._describe_entities(None) == 'هیچ'
     bold = types.MessageEntityBold(offset=4, length=3)
     text = rmod._describe_entities([custom, bold])
-    assert 'custom(doc=' in text and 'bold@4+3' in text
+    assert 'ویژه(doc=' in text and 'bold@4+3' in text
 
 
 # ================================================== server-truth: single
@@ -315,7 +316,7 @@ def test_album_kept_when_server_has_all_entities(monkeypatch):
 
 # ================================================== debug reports
 def test_debug_report_on_and_ignored(monkeypatch):
-    """.premium debug on → گزارش در Saved Messages + بی‌واکنشی به خودش."""
+    """`.بررسی_ایموجی روشن` → گزارش در Saved Messages + بی‌واکنشی به خودش."""
     manager, client, _ = make_manager()
     assert manager.set_debug_reports(True) is True
     message = make_message('🔥 سلام', msg_id=70)
@@ -323,7 +324,7 @@ def test_debug_report_on_and_ignored(monkeypatch):
     assert run(manager.handle_outgoing(message)) == 'handled'
     reports = [s for s in client.sends if s[1] == 'me']
     assert len(reports) == 1                          # گزارش زنده ارسال شد
-    assert 'Premium Debug' in reports[0][2]
+    assert 'بررسی ایموجی ویژه' in reports[0][2]
     # پیام گزارش خودش باید ignore شود
     report_msg = make_message('گزارش', msg_id=901, chat_id=CHAT_ID)
     assert run(manager.handle_outgoing(report_msg)) == 'handled'
@@ -366,8 +367,8 @@ def test_resent_message_observed_in_debug(monkeypatch):
     non_report_after = sum(1 for s in client.sends if s[1] != 'me')
     assert non_report_after == non_report_before      # حلقه رخ نداد
     assert client.deleted == [(CHAT_ID, [80])]         # حذف جدیدی هم نبود
-    # گزارش زندهٔ server-check برای نسخه Resend ارسال شد
-    assert any(s[1] == 'me' and 'Resend' in s[2] for s in client.sends)
+    # گزارش زندهٔ server-check برای نسخه جدید ارسال شد
+    assert any(s[1] == 'me' and 'بررسی ایموجی ویژه' in s[2] for s in client.sends)
 
 
 # ================================================== logger gating

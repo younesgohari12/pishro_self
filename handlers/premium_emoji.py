@@ -16,9 +16,9 @@ from ui.keyboards import (
     premium_emoji_menu, premium_emoji_back, premium_emoji_save, premium_emoji_list,
 )
 
-PROMPT = '✨ پیام دارای ایموجی پرمیوم را ارسال کنید.'
+PROMPT = '✨ پیام دارای ایموجی ویژه را ارسال کنید.'
 MENU_TEXT = (
-    '✨ **Custom Emoji Manager**\n\n'
+    '✨ **ایموجی ویژه**\n\n'
     'استخراج Entity واقعی، تست Document ID و مدیریت ایموجی‌های ذخیره‌شده.'
 )
 
