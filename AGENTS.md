@@ -116,8 +116,13 @@ routine compatible updates do not require a new approval step.
 - Emoji rejection retries the caller's original content exactly once, never
   replays committed album chunks, then cools down for 300 seconds.
 - The per-account toggle lives in user settings (`premium_emoji_converter`:
-  None/True/False). None means the release default
-  `PREMIUM_EMOJI_CONVERTER_ENABLED` applies; panel choices persist and win.
+  None/True/False). Production-Safe enabling: the engine is active when
+  `PREMIUM_EMOJI_ENABLED` is true AND the panel has not explicitly disabled it;
+  None means the release default `PREMIUM_EMOJI_CONVERTER_ENABLED` (now True)
+  applies; explicit panel choices persist and win. Legacy installs that
+  persisted the old release False are flipped once via the marker-guarded
+  update `v0.09.13-premium-emoji-converter-default-on` (main.py); the panel
+  choice in the database is never touched by that update.
   Pre-send conversion on the client send methods is the ONLY main path;
   `install_premium_emoji_outgoing_injector` is a FALLBACK reserved for
   messages sent from other devices (phone/desktop) that never crossed the

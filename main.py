@@ -25,7 +25,11 @@ async def main():
             if backup:
                 print(f"💾 پشتیبان پیش از ارتقا: {backup.name}")
             apply_config_update(DATA_DIR, 'v0.09.13-coingecko-key', release_config_updates())
-            apply_config_update(DATA_DIR, 'v0.09.13-premium-emoji-converter', premium_converter_config_updates())
+            # Production-Safe: نصب‌های موجود که PREMIUM_EMOJI_CONVERTER_ENABLED=False
+            # انتشار قبلی را دریافت کرده بودند، یک‌باره (با marker جدا) به پیش‌فرض
+            # روشن ارتقا می‌یابند؛ انتخاب پنل هر حساب در دیتابیس دست‌نخورده می‌ماند.
+            apply_config_update(DATA_DIR, 'v0.09.13-premium-emoji-converter-default-on',
+                                premium_converter_config_updates())
             await _main_runtime(digest)
     except StorageError as exc:
         print(f"❌ اجرای برنامه برای حفظ داده‌ها متوقف شد: {exc}")

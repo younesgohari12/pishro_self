@@ -352,8 +352,15 @@ class PremiumEmojiConverter:
 
     # ------------------------------------------------------------- enable
     def effective_enabled(self):
-        """Config default + optional per-account panel toggle (None -> default)."""
+        """Production-Safe: کلید اصلی + پیش‌فرض config + انتخاب پنل حساب.
+
+        1) PREMIUM_EMOJI_ENABLED (کلید اصلی انتشار) خاموش باشد → هیچ‌وقت.
+        2) انتخاب صریح پنل حساب (True/False از دیتابیس) همیشه اولویت دارد.
+        3) حساب لمس‌نشده (None) → پیش‌فرض PREMIUM_EMOJI_CONVERTER_ENABLED.
+        """
         if time.monotonic() < self.disabled_until:
+            return False
+        if not getattr(config, 'PREMIUM_EMOJI_ENABLED', True):
             return False
         if self.is_enabled is not None:
             try:
@@ -362,7 +369,7 @@ class PremiumEmojiConverter:
                 user_choice = None
             if user_choice is not None:
                 return bool(user_choice)
-        return bool(getattr(config, 'PREMIUM_EMOJI_CONVERTER_ENABLED', False))
+        return bool(getattr(config, 'PREMIUM_EMOJI_CONVERTER_ENABLED', True))
 
     # ----------------------------------------------------------- pure core
     def pick_document_id(self, emoji):

@@ -203,14 +203,17 @@ FEATURES = {
 
 
 def premium_converter_effective(uid):
-    """وضعیت مؤثر مبدل برای یک حساب.
+    """وضعیت مؤثر مبدل برای یک حساب (همان منطق Production-Safe موتور).
 
-    انتخاب صریح پنل (True/False) بر پیش‌فرض انتشار در config اولویت دارد؛
-    None یعنی کاربر هنوز دکمه را لمس نکرده است.
+    1) PREMIUM_EMOJI_ENABLED (کلید اصلی) خاموش باشد → همیشه خاموش.
+    2) انتخاب صریح پنل (True/False از دیتابیس) بر پیش‌فرض اولویت دارد.
+    3) None یعنی کاربر هنوز دکمه را لمس نکرده → پیش‌فرض PREMIUM_EMOJI_CONVERTER_ENABLED.
     """
+    if not bool(getattr(config, 'PREMIUM_EMOJI_ENABLED', True)):
+        return False
     flag = db.get_user_settings(uid).get('premium_emoji_converter')
     if flag is None:
-        return bool(getattr(config, 'PREMIUM_EMOJI_CONVERTER_ENABLED', False))
+        return bool(getattr(config, 'PREMIUM_EMOJI_CONVERTER_ENABLED', True))
     return bool(flag)
 
 
@@ -641,14 +644,17 @@ async def run_inline():
                 text, buttons = build_main_menu(uid, main_bot_username)
                 await event.edit(text, buttons=buttons, parse_mode='md')
             elif d == "peconv_toggle":
-                current = db.get_user_settings(uid).get('premium_emoji_converter')
-                effective = (bool(getattr(config, 'PREMIUM_EMOJI_CONVERTER_ENABLED', False))
-                             if current is None else bool(current))
+                effective = premium_converter_effective(uid)
                 db.update_user_settings(uid, {'premium_emoji_converter': not effective})
-                await event.answer(
-                    '🎨 Premium Emoji روشن شد؛ ایموجی‌های پیام‌های سلف پرمیوم ارسال می‌شوند.'
-                    if not effective else '🎨 Premium Emoji خاموش شد.',
-                    alert=True)
+                if not bool(getattr(config, 'PREMIUM_EMOJI_ENABLED', True)):
+                    await event.answer(
+                        '⚠️ کلید اصلی PREMIUM_EMOJI_ENABLED در config خاموش است؛ '
+                        'برای فعال‌شدن تبدیل ابتدا آن را روشن کنید.', alert=True)
+                else:
+                    await event.answer(
+                        '🎨 Premium Emoji روشن شد؛ ایموجی‌های پیام‌های سلف پرمیوم ارسال می‌شوند.'
+                        if not effective else '🎨 Premium Emoji خاموش شد.',
+                        alert=True)
                 text, buttons = build_main_menu(uid, main_bot_username)
                 await event.edit(text, buttons=buttons, parse_mode='md')
             elif d == "icrypto_menu":

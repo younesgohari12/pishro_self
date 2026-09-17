@@ -453,14 +453,18 @@ def test_converter_setting_persists_in_database():
 # ------------------------------------------------------------ config keys
 def test_release_config_keys_and_defaults():
     # Release defaults come from import-time _USER_DEFAULTS (monkeypatch-proof).
-    assert config._USER_DEFAULTS['PREMIUM_EMOJI_CONVERTER_ENABLED'] is False
+    # Production-Safe: پیش‌فرض انتشار کانورتر روشن است؛ انتخاب پنل حساب اولویت دارد.
+    assert config._USER_DEFAULTS['PREMIUM_EMOJI_CONVERTER_ENABLED'] is True
     assert config._USER_DEFAULTS['PREMIUM_EMOJI_MODE'] in mapping_module.PREMIUM_EMOJI_MODES
     updates = config.premium_converter_config_updates()
     assert set(updates) == {'PREMIUM_EMOJI_CONVERTER_ENABLED', 'PREMIUM_EMOJI_MODE'}
-    assert updates['PREMIUM_EMOJI_CONVERTER_ENABLED'] is False
+    assert updates['PREMIUM_EMOJI_CONVERTER_ENABLED'] is True
     assert 'PREMIUM_EMOJI_CONVERTER_ENABLED' in config._USER_CONFIG_KEYS
     source = (Path(__file__).resolve().parents[1] / 'config.py').read_text()
-    assert 'PREMIUM_EMOJI_CONVERTER_ENABLED = False' in source
+    assert 'PREMIUM_EMOJI_CONVERTER_ENABLED = True' in source
+    # Release update marker جدید در main.py: نصب‌های موجود False انتشار قبل → True
+    main_source = (Path(__file__).resolve().parents[1] / 'main.py').read_text()
+    assert 'v0.09.13-premium-emoji-converter-default-on' in main_source
 
 
 def test_strict_mode_config_default_and_engine_reading():
