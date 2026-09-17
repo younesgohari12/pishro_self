@@ -28,7 +28,8 @@ API_HASH, API_ID, SESSION, PASSWORD هرگز در پیام تلگرامی یا �
 لاگ محلی با rotation:
 - ``logs/premium_emoji.log`` — رویدادهای Premium (INFO+) و بلوک‌های debug
 - ``logs/error.log`` — خطاها (ERROR+)
-هر دو 10MB با 5 نسخه پشتیبان.
+- ``logs/system_events.log`` — بلوک‌های [AWAY] و [STATE]
+هر سه 10MB با 5 نسخه پشتیبان.
 """
 from __future__ import annotations
 
@@ -119,6 +120,7 @@ def _build_file_logger(name, filename):
 
 _premium_file_log = _build_file_logger('premium', 'premium_emoji.log')
 _error_file_log = _build_file_logger('error', 'error.log')
+_system_file_log = _build_file_logger('system', 'system_events.log')
 
 
 # ---------------------------------------------------------------- transport
@@ -198,6 +200,9 @@ _MIN_INTERVALS = {
     'post_fix': 5.0,        # 🔧 تزریق entity بعد از ارسال
     'debug': 3.0,           # [PREMIUM DEBUG]
     'custom_debug': 3.0,    # [CustomEmoji] (سپرده مستقل تا بلوک rich سرکوب نشود)
+    'resend_debug': 3.0,    # [PremiumResend] (سپرده مستقل)
+    'away': 3.0,            # [AWAY]
+    'state': 3.0,           # [STATE]
     'generic': 30.0,        # send_log/error/warning عمومی
 }
 _GLOBAL_CAP_PER_MINUTE = 30
@@ -355,6 +360,125 @@ def send_premium_event(title, fields=None, *, level='INFO', kind='converted',
     if not _anti_spam_ok(kind, time.monotonic()):
         return False
     _enqueue(text + _suppressed_suffix(kind), _chat_ids(chat_id))
+    return True
+
+
+def format_premium_resend_debug(*, chat, message_id, converted, deleted, resent,
+                                reason=None):
+    """بلوک استاندارد [PremiumResend] مطابق spec مالک:
+
+        [PremiumResend]
+        chat: Group (-1001234567890)
+        message_id: 123
+        converted: True
+        deleted: True
+        resent: True
+    """
+    lines = [
+        '[PremiumResend]',
+        f'chat: {chat}',
+        f'message_id: {message_id}',
+        f'converted: {bool(converted)}',
+        f'deleted: {bool(deleted)}',
+        f'resent: {bool(resent)}',
+    ]
+    if reason:
+        lines.append(f'reason: {reason}')
+    return '\n'.join(lines)
+
+
+def format_away_debug(*, user, sent, reason):
+    """بلوک استاندارد [AWAY] مطابق spec مالک:
+
+        [AWAY]
+        user: 123456789
+        sent: True
+        reason: first_message
+    """
+    return (
+        '[AWAY]\n'
+        f'user: {user}\n'
+        f'sent: {bool(sent)}\n'
+        f'reason: {reason}'
+    )
+
+
+def format_state_debug(*, closed, chat, old_state):
+    """بلوک استاندارد [STATE] مطابق spec مالک:
+
+        [STATE]
+        closed: panel, wizard, waiting_input
+        chat: -1001234567890
+        old_state: cem_extract
+    """
+    if isinstance(closed, (list, tuple)):
+        closed = ', '.join(str(item) for item in closed) or 'none'
+    return (
+        '[STATE]\n'
+        f'closed: {closed or "none"}\n'
+        f'chat: {chat}\n'
+        f'old_state: {old_state or "none"}'
+    )
+
+
+def send_premium_resend_debug(block_text, *, chat_id=None):
+    """بلوک [PremiumResend] — لاگ محلی همیشه؛ تلگرام با پرچم + کانال Premium."""
+    text = redact(block_text)
+    _premium_file_log.info('%s', text)
+    if not getattr(config, 'PREMIUM_EMOJI_RESEND_DEBUG', True):
+        return False
+    channel = getattr(config, 'PREMIUM_EMOJI_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('resend_debug', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('resend_debug'), _chat_ids(chat_id))
+    return True
+
+
+def send_away_debug(block_text, *, chat_id=None, telegram=True):
+    """بلوک [AWAY] — لاگ محلی همیشه؛ تلگرام با پرچم AWAY_DEBUG + کانال AWAY.
+
+    telegram=False فقط لاگ محلی (برای رویدادهای پرتکرار مثل suppress).
+    """
+    text = redact(block_text)
+    _system_file_log.info('%s', text)
+    if not telegram:
+        return False
+    if not getattr(config, 'AWAY_DEBUG', True):
+        return False
+    channel = getattr(config, 'AWAY_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('away', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('away'), _chat_ids(chat_id))
+    return True
+
+
+def send_state_debug(block_text, *, chat_id=None, telegram=True):
+    """بلوک [STATE] — لاگ محلی همیشه؛ تلگرام با پرچم STATE_DEBUG.
+
+    telegram=False فقط لاگ محلی است.
+    """
+    text = redact(block_text)
+    _system_file_log.info('%s', text)
+    if not telegram:
+        return False
+    if not getattr(config, 'STATE_DEBUG', True):
+        return False
+    channel = getattr(config, 'AWAY_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('state', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('state'), _chat_ids(chat_id))
     return True
 
 

@@ -1,7 +1,7 @@
 """نقطه ورود اصلی - همه فایل‌ها را اجرا می‌کند."""
 import asyncio
 
-from config import BASE_DIR, DATA_DIR, user_config_values, release_config_updates, premium_converter_config_updates, TRIAL_DURATION_HOURS
+from config import BASE_DIR, DATA_DIR, user_config_values, release_config_updates, premium_converter_config_updates, resend_mode_config_updates, TRIAL_DURATION_HOURS
 from storage import (StorageError, process_lock, initialize_store, prepare_upgrade, finish_upgrade, apply_config_update)
 
 
@@ -30,6 +30,10 @@ async def main():
             # روشن ارتقا می‌یابند؛ انتخاب پنل هر حساب در دیتابیس دست‌نخورده می‌ماند.
             apply_config_update(DATA_DIR, 'v0.09.13-premium-emoji-converter-default-on',
                                 premium_converter_config_updates())
+            # Premium Resend + Away: کلید PREMIUM_EMOJI_RESEND_MODE وقتی در
+            # config ذخیره‌شده نبود اضافه می‌شود؛ تغییر دستی مالک حفظ می‌ماند.
+            apply_config_update(DATA_DIR, 'v0.09.13-premium-resend-away',
+                                resend_mode_config_updates())
             await _main_runtime(digest)
     except StorageError as exc:
         print(f"❌ اجرای برنامه برای حفظ داده‌ها متوقف شد: {exc}")

@@ -17,6 +17,7 @@ from config import (
 import db
 import ui
 from services.feature_flags import filter_buttons, disabled_callback_message
+from services import away as away_service
 from database import models as tabchi_models
 from handlers.save_message import (
     begin_destination_capture,
@@ -217,6 +218,50 @@ def premium_converter_effective(uid):
     return bool(flag)
 
 
+def premium_resend_effective(uid):
+    """وضعیت مؤثر Resend هوشمند (Copy/Delete/Resend) برای یک حساب.
+
+    1) PREMIUM_EMOJI_RESEND_MODE (کلید سخت config) خاموش باشد → همیشه خاموش.
+    2) کانورتر هم باید مؤثراً فعال باشد (Resend بدون تبدیل معنا ندارد).
+    3) انتخاب صریح پنل (True/False از دیتابیس) اولویت دارد؛ None → پیش‌فرض روشن.
+    """
+    if not bool(getattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)):
+        return False
+    if not premium_converter_effective(uid):
+        return False
+    flag = db.get_user_settings(uid).get('premium_emoji_resend')
+    if flag is None:
+        return True  # Production-Safe: پیش‌فرض روشن مگر کاربر خاموش کند
+    return bool(flag)
+
+
+def build_away_menu(uid):
+    """صفحه پنل Away Message — وضعیت، متن فعلی و کنترل‌ها."""
+    settings = away_service.get_settings(uid)
+    enabled = settings['away_enabled']
+    preview = settings['away_text']
+    if len(preview) > 120:
+        preview = preview[:120] + '…'
+    notified = len(settings['away_sent_users'])
+    text = (
+        "💤 **Away Message (پیام آفلاین)**\n\n"
+        f"وضعیت: {'🟢 روشن' if enabled else '🔴 خاموش'}\n"
+        f"متن فعلی:\n«{preview}»\n\n"
+        f"کاربرانی که پیام گرفته‌اند: **{notified}**\n\n"
+        "این پاسخ فقط در **چت خصوصی** و برای هر کاربر **یک بار** ارسال می‌شود؛\n"
+        "با اولین پیام خودت (فعالیت) لیست به‌صورت خودکار ریست می‌شود."
+    )
+    buttons = [
+        [ui.inline_button(
+            '🔴 خاموش کردن' if enabled else '🟢 روشن کردن',
+            b"away_toggle", "danger" if enabled else "success")],
+        [ui.inline_button("✏️ تغییر متن", b"away_text_change", "primary")],
+        [ui.inline_button("🧹 ریست لیست ارسال‌شده‌ها", b"away_reset", "secondary")],
+        [ui.inline_button("↩️ بازگشت", b"back_main", "secondary")],
+    ]
+    return text, buttons
+
+
 def build_main_menu(uid, main_bot_username):
     """پنل اصلی یکپارچه برای دستور .پنل."""
     username = (main_bot_username or '').lstrip('@')
@@ -233,6 +278,12 @@ def build_main_menu(uid, main_bot_username):
         [ui.inline_button(
             f"🎨 Premium Emoji: {'🟢 روشن' if premium_converter_effective(uid) else '🔴 خاموش'}",
             b"peconv_toggle", "success" if premium_converter_effective(uid) else "danger")],
+        [ui.inline_button(
+            f"🔁 Resend هوشمند: {'🟢 روشن' if premium_resend_effective(uid) else '🔴 خاموش'}",
+            b"peresend_toggle", "success" if premium_resend_effective(uid) else "danger")],
+        [ui.inline_button(
+            f"💤 Away Message: {'🟢 روشن' if away_service.get_settings(uid)['away_enabled'] else '🔴 خاموش'}",
+            b"away_menu", "success" if away_service.get_settings(uid)['away_enabled'] else "danger")],
         [ui.inline_button("💰 ارز دیجیتال", b"icrypto_menu", "success")],
         [
             ui.inline_button("🌐 ترجمه", b"feat_translate", "primary"),
@@ -656,6 +707,59 @@ async def run_inline():
                         if not effective else '🎨 Premium Emoji خاموش شد.',
                         alert=True)
                 text, buttons = build_main_menu(uid, main_bot_username)
+                await event.edit(text, buttons=buttons, parse_mode='md')
+            elif d == "peresend_toggle":
+                effective = premium_resend_effective(uid)
+                db.update_user_settings(uid, {'premium_emoji_resend': not effective})
+                if not bool(getattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)):
+                    await event.answer(
+                        '⚠️ کلید PREMIUM_EMOJI_RESEND_MODE در config خاموش است؛ '
+                        'ابتدا آن را در config روشن کنید.', alert=True)
+                elif not premium_converter_effective(uid):
+                    await event.answer(
+                        '⚠️ ابتدا Premium Emoji را روشن کنید؛ Resend بدون تبدیل معنا ندارد.',
+                        alert=True)
+                else:
+                    await event.answer(
+                        '🔁 Resend هوشمند روشن شد؛ پیام‌هایی که entity خود را از دست می‌دهند '
+                        'کپی و با Custom Emoji دوباره ارسال می‌شوند.'
+                        if not effective else '🔁 Resend هوشمند خاموش شد؛ مسیر edit قبلی فعال می‌ماند.',
+                        alert=True)
+                text, buttons = build_main_menu(uid, main_bot_username)
+                await event.edit(text, buttons=buttons, parse_mode='md')
+            elif d == "away_menu":
+                text, buttons = build_away_menu(uid)
+                await event.edit(text, buttons=buttons, parse_mode='md')
+            elif d == "away_toggle":
+                settings = away_service.get_settings(uid)
+                away_service.set_enabled(uid, not settings['away_enabled'])
+                await event.answer(
+                    '💤 Away روشن شد؛ پاسخ خودکار فقط در چت خصوصی و یک بار برای هر کاربر.'
+                    if not settings['away_enabled'] else '💤 Away خاموش شد.',
+                    alert=True)
+                text, buttons = build_away_menu(uid)
+                await event.edit(text, buttons=buttons, parse_mode='md')
+            elif d == "away_text_change":
+                away_service.begin_text_capture(uid)
+                await event.edit(
+                    "✏️ **متن جدید Away را در همین چت ارسال کنید.**\n\n"
+                    "• متن ساده ارسال شود (بدون فرمت)\n"
+                    "• حداکثر ۵۰۰ کاراکتر\n"
+                    "• برای لغو، دکمه زیر یا دستور `.بستن`",
+                    buttons=[[ui.inline_button("↩️ لغو", b"away_text_cancel", "secondary")]],
+                    parse_mode='md',
+                )
+            elif d == "away_text_cancel":
+                away_service.cancel_text_capture(uid)
+                await event.answer("تغییر متن لغو شد.", alert=False)
+                text, buttons = build_away_menu(uid)
+                await event.edit(text, buttons=buttons, parse_mode='md')
+            elif d == "away_reset":
+                count = away_service.reset_sent_users(uid)
+                await event.answer(
+                    f'🧹 لیست ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
+                    alert=True)
+                text, buttons = build_away_menu(uid)
                 await event.edit(text, buttons=buttons, parse_mode='md')
             elif d == "icrypto_menu":
                 text, buttons = build_inline_crypto_menu()

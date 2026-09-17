@@ -52,6 +52,12 @@ from services.premium_emoji_converter import (
     uninstall_premium_emoji_converter,
     uninstall_premium_emoji_outgoing_injector,
 )
+from services.premium_resend import (
+    install_premium_resend,
+    uninstall_premium_resend,
+)
+from services import away as away_service
+from services.state_closer import close_all_pending, log_state
 from services.custom_emoji_service import (
     EmojiError,
     detailed_result_text,
@@ -81,6 +87,8 @@ from tts.voices import (
 # الگوی دستورات
 # ========================================
 PATTERN_PANEL = re.compile(r'^\.پنل$', re.IGNORECASE)
+PATTERN_CLOSE = re.compile(r'^\.بستن$', re.IGNORECASE)
+PATTERN_AWAY = re.compile(r'^\.away(?:\s+(.+))?$', re.IGNORECASE | re.DOTALL)
 PATTERN_INFO = re.compile(r'^\.info$', re.IGNORECASE)
 PATTERN_PING = re.compile(r'^\.ping$', re.IGNORECASE)
 PATTERN_SPAM = re.compile(r'^\.اسپم\s+(\d+)\s+(.+)$', re.IGNORECASE)
@@ -344,6 +352,7 @@ async def run_self(session_path, session_string):
             self_manager.unregister_client(uid, client)
         if client is not None:
             uninstall_premium_emoji_outgoing_injector(client)
+            uninstall_premium_resend(client)
             uninstall_premium_emoji_converter(client)
             try:
                 await client.disconnect()
@@ -374,6 +383,22 @@ async def _run_connected_self(client, me, uid, sid):
         return _cache['value']
 
     engine = install_premium_emoji_converter(client, account=me, is_enabled=_converter_flag)
+    # 🔁 Premium Resend Mode — ارسال مجدد هوشمند (Copy/Delete/Resend).
+    # بعد از هر پیام خروجی که ایموجی قابل‌نگاشت دارد ولی entity در نسخه
+    # نهایی تلگرام نیست، پیام دقیقاً کپی، با Custom Emoji دوباره ارسال و
+    # پیام اصلی حذف می‌شود. انتخاب پنل (premium_emoji_resend) اولویت دارد.
+    def _resend_flag(_uid=uid, _cache={'value': None, 'at': 0.0}):
+        now = time.monotonic()
+        if now - _cache['at'] > 2.0:
+            try:
+                _cache['value'] = db.get_user_settings(_uid).get('premium_emoji_resend')
+                _cache['at'] = now
+            except Exception:
+                if _cache['at'] == 0.0:
+                    _cache['at'] = now
+        return _cache['value']
+
+    install_premium_resend(client, engine, is_enabled=_resend_flag, owner_id=uid)
     # 🔧 Post-Send Fix — فقط FALLBACK: پیام‌های خروجی از دستگاه‌های دیگر
     # (گوشی/اپ رسمی) که از wrapper های بالا عبور نکرده‌اند. قبل از فونت‌هندلر
     # ثبت می‌شود تا اولویت پردازش با آن باشد.
@@ -410,6 +435,8 @@ async def _run_connected_self(client, me, uid, sid):
     register_deleted_message_handlers(client, uid)
     register_message_font_handler(client, uid)
     register_copy_protected_handlers(client, uid)
+    # 💤 Away Message — پاسخ خودکار خصوصی + ریست با فعالیت مالک
+    away_service.register_away_handlers(client, uid)
 
     # ========================================
     # 📥 پیام‌های ورودی (سکوت + حالت دشمن)
@@ -458,6 +485,94 @@ async def _run_connected_self(client, me, uid, sid):
             await _temp_message(client, event.chat_id, "⚠️ **ربات پنل پاسخ نداد.**")
         except Exception as e:
             await _temp_message(client, event.chat_id, f"❌ خطا: `{e}`")
+
+    # ========================================
+    # 📌 دستور .بستن — بستن همه عملیات‌های در انتظار (همیشه فعال)
+    #    پنل، wizard، ورودی متن/فایل، انتخاب صدا، تأییدها و تسک‌های نیمه‌کاره
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_CLOSE))
+    async def close_pending_cmd(event):
+        try:
+            await event.delete()
+            result = await close_all_pending(
+                client, uid, event.chat_id,
+                spam_tasks=active_spam_tasks,
+                cleanup_tasks=active_cleanup_tasks,
+            )
+            log_state(event.chat_id, result)
+            await _temp_message(client, event.chat_id, "✅ عملیات بسته شد")
+        except Exception as e:
+            print(f"⚠️ خطا در بستن عملیات‌ها: {e}")
+
+    # ========================================
+    # 💤 دستور .away — کنترل پیام خودکار آفلاین (فقط چت خصوصی)
+    #    .away / .away on|off / .away text <متن> / .away reset
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_AWAY))
+    async def away_cmd(event):
+        try:
+            args = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            settings = away_service.get_settings(uid)
+            if not args:
+                count = len(settings['away_sent_users'])
+                state = '🟢 روشن' if settings['away_enabled'] else '🔴 خاموش'
+                await client.send_message(
+                    event.chat_id,
+                    '💤 **Away Message**\n\n'
+                    f'وضعیت: {state}\n'
+                    f'متن: «{settings["away_text"]}»\n'
+                    f'پیام‌گرفته‌ها (تا ریست بعدی): {count}\n\n'
+                    'دستورها:\n'
+                    '• `.away on` / `.away off`\n'
+                    '• `.away text <متن جدید>`\n'
+                    '• `.away reset` — ریست لیست ارسال‌شده‌ها',
+                    parse_mode='md',
+                )
+                return
+            action, _, rest = args.partition(' ')
+            action = action.lower()
+            if action in ('on', 'روشن'):
+                away_service.set_enabled(uid, True)
+                await client.send_message(event.chat_id,
+                                          '✅ Away روشن شد؛ پاسخ خودکار فقط در چت خصوصی و برای هر کاربر یک بار ارسال می‌شود.',
+                                          parse_mode=None)
+            elif action in ('off', 'خاموش'):
+                away_service.set_enabled(uid, False)
+                await client.send_message(event.chat_id,
+                                          '⛔️ Away خاموش شد.',
+                                          parse_mode=None)
+            elif action in ('text', 'متن'):
+                if not rest.strip():
+                    await client.send_message(
+                        event.chat_id,
+                        '❌ متن جدید را بعد از دستور بنویسید:\n`.away text سلام، بعداً جواب می‌دهم.`',
+                        parse_mode=None)
+                    return
+                try:
+                    saved = away_service.set_text(uid, rest.strip())
+                except ValueError as exc:
+                    await client.send_message(event.chat_id, f'❌ {exc}',
+                                              parse_mode=None)
+                    return
+                await client.send_message(event.chat_id,
+                                          f'✅ متن Away ذخیره شد.\n\n💤 {saved}',
+                                          parse_mode=None)
+            elif action in ('reset', 'ریست'):
+                count = away_service.reset_sent_users(uid)
+                await client.send_message(
+                    event.chat_id,
+                    f'🧹 لیست Away ریست شد ({count} کاربر)؛ برای همه دوباره یک بار پیام می‌رود.',
+                    parse_mode=None)
+            else:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ دستور نامعتبر است.\nنمونه: `.away on` | `.away off` | `.away text <متن>` | `.away reset`',
+                    parse_mode=None)
+        except Exception as e:
+            print(f"⚠️ خطا در away: {e}")
 
     # ========================================
     # 💰 قیمت و تبدیل لحظه‌ای ارز دیجیتال

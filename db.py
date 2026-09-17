@@ -14,6 +14,9 @@ from services.logging_service import log_db_error, get_logger
 
 _logger = get_logger('db')
 
+# 💤 متن پیش‌فرض Away Message (قابل تغییر با .away text یا پنل)
+DEFAULT_AWAY_TEXT = 'سلام، الان در دسترس نیستم. به محض آنلاین شدن جواب می‌دهم.'
+
 DEFAULT_SETTINGS = {
     'bio_clock': False,
     'lastname_clock': False,
@@ -36,6 +39,13 @@ DEFAULT_SETTINGS = {
     'message_font_style': 'bold',
     # تبدیل ایموجی یونیکد به Custom Emoji در خروجی سلف (None = پیش‌فرض config)
     'premium_emoji_converter': None,
+    # 🔁 ارسال مجدد هوشمند Premium (None = پیش‌فرض config.PREMIUM_EMOJI_RESEND_MODE)
+    'premium_emoji_resend': None,
+    # 💤 Away Message — پاسخ خودکار خصوصی هنگام آفلاین بودن
+    'away_enabled': False,
+    'away_text': DEFAULT_AWAY_TEXT,
+    # شناسه کاربران خصوصی که پیام Away گرفته‌اند → timestamp آخرین ارسال
+    'away_sent_users': {},
     'muted_chats': [],
     'enemy_chats': [],
     # هشدارها و صورتحساب
@@ -212,6 +222,23 @@ def _normalize_settings(data):
     # None means "panel toggle never touched" -> release config default applies.
     converter_flag = d.get('premium_emoji_converter', None)
     d['premium_emoji_converter'] = None if converter_flag is None else bool(converter_flag)
+    resend_flag = d.get('premium_emoji_resend', None)
+    d['premium_emoji_resend'] = None if resend_flag is None else bool(resend_flag)
+    d['away_enabled'] = bool(d.get('away_enabled', False))
+    away_text = d.get('away_text', '')
+    if not isinstance(away_text, str):
+        away_text = ''
+    d['away_text'] = away_text.strip() or DEFAULT_AWAY_TEXT
+    sent_users = d.get('away_sent_users', {})
+    if not isinstance(sent_users, dict):
+        sent_users = {}
+    cleaned_sent_users = {}
+    for key, value in list(sent_users.items()):
+        try:
+            cleaned_sent_users[str(int(key))] = float(value)
+        except (TypeError, ValueError):
+            continue
+    d['away_sent_users'] = cleaned_sent_users
     font_style = str(d.get('message_font_style', 'bold') or 'bold').strip().lower()
     if font_style not in {'bold', 'italic', 'bold_italic', 'strike', 'underline', 'monospace'}:
         font_style = 'bold'

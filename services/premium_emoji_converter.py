@@ -702,6 +702,17 @@ def install_premium_emoji_outgoing_injector(client, engine):
                 return  # forward_messages: طبق قانون هرگز دست‌نخورده
             if getattr(message, 'via_bot_id', None):
                 return  # پیام‌های پنل اینلاین: محتوای ربات، مستقل از کانورتر
+            # 🔁 Premium Resend Mode (Copy/Delete/Resend) — اولویت با ارسال
+            # مجدد هوشمند است؛ فقط اگر این ماژول پیام را نگرفت، مسیر edit
+            # (رفتار قبلی) ادامه می‌یابد. هر دو حالت سقوط امن دارند.
+            resend = getattr(client, '_premium_resend_manager', None)
+            if resend is not None:
+                try:
+                    verdict = await resend.handle_outgoing(message)
+                except Exception:  # noqa: BLE001 - resend هرگز edit را نشکند
+                    verdict = 'skipped'
+                if verdict == 'handled':
+                    return
             text = getattr(message, 'message', None)
             if not isinstance(text, str) or not text or len(text) > MAX_MESSAGE_CHARS:
                 return

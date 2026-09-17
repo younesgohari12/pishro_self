@@ -132,3 +132,59 @@ routine compatible updates do not require a new approval step.
   `PREMIUM_REPORT_BOT_TOKEN` environment variable. No token value may be
   committed to the repository.
 
+
+## Premium Resend + Close + Away contract (v0.09.13)
+
+### Premium Resend Mode (`services/premium_resend.py`)
+- Purpose: entity-based conversion silently fails in some chats / Telegram
+  server conditions, and messages sent from other devices never cross the
+  converter. Resend adds a verify/repair layer AFTER the send:
+  send → verify (does the final outgoing message carry the custom entity?)
+  → copy the message EXACTLY (text, entities, reply-to, photo/video/document,
+  caption, album, silent) → resend through the Unified Pipeline (so the copy
+  carries real MessageEntityCustomEmoji) → delete the original.
+- Safety rules: the original is deleted ONLY after the resend succeeded; if
+  the resend OR the delete fails the original stays (a message is never
+  lost). Loop protection: recently-resent message ids are remembered, the
+  engine cooldown is honoured, and after 2 consecutive "server stripped the
+  entity again" events a 300s cooldown pauses the feature. Albums are
+  buffered per grouped_id and resent as ONE album.
+- Enabling chain (Production-Safe): `PREMIUM_EMOJI_RESEND_MODE` (config hard
+  switch, default True) AND converter `effective_enabled()` AND the
+  per-account panel toggle `premium_emoji_resend` (None = untouched → ON).
+  Panel: .پنل → «🔁 Resend هوشمند».
+- Integration point: the outgoing injector calls
+  `PremiumResendManager.handle_outgoing()` FIRST; only when it returns
+  'skipped' does the previous edit-fallback run. Resend is never applied to
+  forwards, via-bot panel messages or service messages.
+- Log block: `[PremiumResend]` (chat / message_id / converted / deleted /
+  resent / reason) → premium_emoji.log + admin channel
+  (`PREMIUM_EMOJI_RESEND_DEBUG`).
+
+### Command .بستن (`services/state_closer.py`)
+- Closes EVERY pending operation in the same moment: inline panel messages
+  (via_bot messages of the inline bot in that chat), custom-emoji wizard,
+  save-message destination input, copy-protected destination input, away
+  text input, TTS voice selectors (all chats, selector messages deleted),
+  running spam/cleanup tasks (all chats) and admin panel confirmation
+  states (memory + database). Always active, works in every chat.
+- Reply: «✅ عملیات بسته شد» — no state survives. Log block: `[STATE]`
+  (closed / chat / old_state) → system_events.log
+  (`STATE_DEBUG`, channel level `AWAY_LOG_LEVEL`).
+
+### Away Message (`services/away.py`)
+- Auto-reply for private chats only while enabled; one message per user
+  until the owner comes back online (any owner outgoing message resets the
+  sent list), a manual reset, or the optional `AWAY_RESET_HOURS` TTL.
+  Bot senders, service messages, muted and enemy chats are ignored. The
+  away reply itself never triggers a reset (self-ignoring set), and it is
+  sent through client.send_message so the Unified Pipeline still applies.
+- Settings live in the database: `away_enabled`, `away_text`,
+  `away_sent_users` ({user_id: last_sent_ts}). Commands: `.away` (status),
+  `.away on|off`, `.away text <متن>`, `.away reset`. Panel: .پنل →
+  «💤 Away Message» (toggle / change text via capture / reset list).
+- Log block: `[AWAY]` (user / sent / reason) → system_events.log
+  (`AWAY_DEBUG`); suppressed repeats stay local-only.
+- New config keys are marker-guarded once:
+  `v0.09.13-premium-resend-away` (main.py) adds
+  `PREMIUM_EMOJI_RESEND_MODE` when missing; manual owner edits always win.

@@ -29,11 +29,38 @@ def _admin_user_ids_page(page: int, page_size: int):
     return top[(page - 1) * page_size: page * page_size], total
 
 
+# کنترلرهای فعال پنل ادمین (برای بستن state ها با دستور .بستن از سمت سلف)
+_active_controllers: list['AdminController'] = []
+
+
+def clear_pending_state(uid) -> bool:
+    """پاک‌سازی کامل state پنل ادمین یک کاربر از حافظه و دیتابیس.
+
+    True یعنی state فعالی پیدا و پاک شد؛ همیشه دیتابیس هم پاک می‌شود.
+    """
+    removed = False
+    try:
+        key = int(uid)
+    except (TypeError, ValueError):
+        return False
+    for controller in list(_active_controllers):
+        states = getattr(controller, 'states', None)
+        if isinstance(states, dict) and key in states:
+            states.pop(key, None)
+            removed = True
+    try:
+        db.delete_admin_state(key)
+    except Exception:  # noqa: BLE001 - دیتابیس نباید بستن state را بشکند
+        pass
+    return removed
+
+
 class AdminController:
     def __init__(self, bot, resolve_user: Callable[[str], Awaitable[int | None]]):
         self.bot = bot
         self.resolve_user = resolve_user
         self.states: dict[int, dict] = db.load_admin_states()
+        _active_controllers.append(self)
 
     def _set_state(self, uid: int, state: dict):
         self.states[int(uid)] = state

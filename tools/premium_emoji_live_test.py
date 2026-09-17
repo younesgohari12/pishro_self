@@ -183,6 +183,65 @@ async def run_live(args):
         r.fail('دو فایل با --file و --file2 داده نشد؛ آلبوم واقعی اجرا نشد')
     results.append(r)
 
+    # 7) Resend هوشمند (Copy/Delete/Resend) — شبیه‌سازی پیام «گوشی»
+    #    پیام بدون entity با RPC خام فرستاده می‌شود (مثل اپ رسمی)؛ سپس
+    #    باید injector/resend آن را کپی، با entity دوباره بفرستد و اصل را
+    #    حذف کند. نتیجه فقط از پیام‌های واقعی برگشتی خوانده می‌شود.
+    r = Result('Resend')
+    try:
+        from services.premium_resend import install_premium_resend
+        from services.premium_emoji_converter import (
+            install_premium_emoji_outgoing_injector,
+        )
+        install_premium_resend(client, engine)
+        install_premium_emoji_outgoing_injector(client, engine)
+        raw_text = _unique('تست ارسال مجدد 🔥 هوشمند')
+        raw = await client(functions.messages.SendMessageRequest(
+            peer=types.InputPeerSelf(),
+            message=raw_text,
+            random_id=int.from_bytes(os.urandom(8), 'big'),
+            no_webpage=True,
+        ))
+        original_id = None
+        for update in getattr(raw, 'updates', []) or []:
+            message = getattr(update, 'message', None)
+            if message is not None and getattr(message, 'id', None):
+                original_id = message.id
+        if not original_id:
+            raise AssertionError('پیام خام ارسال شد اما شناسه برگشت نیامد')
+        # زمان برای پردازش outgoing + (در صورت لزوم) Resend و حذف
+        await asyncio.sleep(3.0)
+        fresh = await client.get_messages('me', ids=[original_id, original_id + 1,
+                                                     original_id + 2])
+        original_gone = all(m is None or m.id != original_id for m in fresh)
+        resent = None
+        for m in fresh:
+            if (m is not None and m.id != original_id and m.out
+                    and (m.raw_text or m.message or '') == raw_text
+                    and len(_customs(m)) >= 1):
+                resent = m
+        if original_gone and resent is not None:
+            r.ok(f'کپی شد (id={resent.id})، اصل حذف شد، '
+                 f'{len(_customs(resent))} entity')
+            await client.delete_messages('me', resent.id)
+        elif resent is None and not original_gone:
+            # پیام اصلی سر جایش است؛ مسیر edit باید entity را گذاشته باشد
+            kept = await client.get_messages('me', ids=original_id)
+            kept = kept[0] if isinstance(kept, list) else kept
+            if kept is not None and len(_customs(kept)) >= 1:
+                r.ok('پیام اصلی ماند اما با entity تزریق شد (مسیر edit)')
+                await client.delete_messages('me', original_id)
+            else:
+                r.fail('نه Resend و هیچ edit اتفاق نیفتاد؛ پیام بدون entity ماند')
+                await client.delete_messages('me', original_id)
+        elif resent is None:
+            r.fail('پیام اصلی حذف شد اما نسخه با entity پیدا نشد')
+        else:
+            r.fail('وضعیت غیرمنتظره؛ جزئیات در خروجی')
+    except Exception as exc:
+        r.fail(f'{type(exc).__name__}: {exc}')
+    results.append(r)
+
     await client.disconnect()
 
     print('\n' + '=' * 62)
