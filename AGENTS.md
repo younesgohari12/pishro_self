@@ -161,6 +161,35 @@ routine compatible updates do not require a new approval step.
   resent / reason) → premium_emoji.log + admin channel
   (`PREMIUM_EMOJI_RESEND_DEBUG`).
 
+### Debug round: [PREMIUM_CHECK] + server-truth Resend (v0.09.13 DEBUG)
+- Why: the resend decision previously used the LOCAL Telethon objects; if
+  Telegram strips the entity server-side the local view lies. The flow is
+  now: send → `[PREMIUM_CHECK]` → sleep `VERIFY_DELAY_SECONDS` (0.5s) →
+  `client.get_messages(chat_id, ids=id)` re-fetch → decide on the SERVER
+  copy → resend (copy exactly + custom entities) → delete original.
+- `[PREMIUM_CHECK]` block (exact owner spec): chat_id / message_id /
+  has_entity / entities / media_type / reply_to, plus a `server_check:`
+  line on the decision path (fetch result | mapping result). Logged for
+  every relevant outgoing message (has emoji OR has media) whenever the
+  resend chain is enabled; local log always, Telegram via
+  `PREMIUM_EMOJI_RESEND_DEBUG` (anti-spam kind `premium_check`).
+- Fetch outcomes: server copy HAS entity → keep (no resend); server copy
+  missing entity → resend; message gone → nothing to do; fetch error →
+  fall back to the event view (previous behaviour).
+- Album queue: parts buffered by grouped_id → after flush delay sleep 0.5s
+  → ALL parts re-fetched once → if any part lacks the entity AND at least
+  one mapping exists, the WHOLE album is resent exactly once and originals
+  deleted afterwards (never per-part duplicates).
+- `.premium debug on|off|status` (self.py): live step-by-step reports of
+  every stage (event view → server fetch → decision → result) delivered to
+  Saved Messages. Reports are sent with the converter bypass ContextVar and
+  their message ids go into an ignore set, so reports never trigger
+  [PREMIUM_CHECK]/resend themselves. Status shows the resend chain state,
+  engine cooldown and resent/deleted/kept/failed counters.
+- Strip observation: the resent copy's own outgoing event is observed too;
+  in debug mode it is re-fetched from the server so the log shows whether
+  Telegram kept or stripped the entity of the resent message.
+
 ### Command .بستن (`services/state_closer.py`)
 - Closes EVERY pending operation in the same moment: inline panel messages
   (via_bot messages of the inline bot in that chat), custom-emoji wizard,

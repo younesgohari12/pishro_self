@@ -286,6 +286,7 @@ def test_cooldown_blocks_resend(monkeypatch):
 def test_album_resend_as_one_album(monkeypatch):
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)  # واکشی سرور: بدون انتظار واقعی
     manager, client, _ = make_manager()
     grouped = 'album-1'
     part1 = make_message('🔥 کپشن آلبوم', msg_id=50, media=NS(m='p1'),
@@ -315,6 +316,7 @@ def test_album_resend_as_one_album(monkeypatch):
 def test_album_with_entities_released_without_resend(monkeypatch):
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
     manager, client, _ = make_manager()
     custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
     part1 = make_message('🔥 کپشن', msg_id=60, media=NS(m='p1'),
@@ -501,6 +503,7 @@ def test_original_kept_when_resent_copy_lacks_entity(monkeypatch):
 def test_album_originals_kept_when_no_entity_in_result(monkeypatch):
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
     manager, client, _ = make_manager()
     part1 = make_message('🔥 کپشن', msg_id=80, media=NS(m='p1'),
                          grouped_id='album-3')

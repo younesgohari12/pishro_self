@@ -201,6 +201,7 @@ _MIN_INTERVALS = {
     'debug': 3.0,           # [PREMIUM DEBUG]
     'custom_debug': 3.0,    # [CustomEmoji] (سپرده مستقل تا بلوک rich سرکوب نشود)
     'resend_debug': 3.0,    # [PremiumResend] (سپرده مستقل)
+    'premium_check': 2.0,   # [PREMIUM_CHECK] (بررسی سرور قبل از تصمیم Resend)
     'away': 3.0,            # [AWAY]
     'state': 3.0,           # [STATE]
     'generic': 30.0,        # send_log/error/warning عمومی
@@ -419,6 +420,58 @@ def format_state_debug(*, closed, chat, old_state):
         f'chat: {chat}\n'
         f'old_state: {old_state or "none"}'
     )
+
+
+def format_premium_check(*, chat_id, message_id, has_entity, entities,
+                         media_type, reply_to, server_check=None):
+    """بلوک استاندارد [PREMIUM_CHECK] مطابق spec مالک (دور Debug):
+
+        [PREMIUM_CHECK]
+        chat_id: -1001234567890
+        message_id: 123
+        has_entity: False
+        entities: none
+        media_type: photo
+        reply_to: 7
+        server_check: fetched after 0.5s → no entity → resend
+
+    شش خط اول دقیقاً همان قالب درخواستی است؛ خط ``server_check`` نتیجه
+    واکشی مجدد پیام از تلگرام (بعد از sleep 0.5s) است و فقط وقتی اضافه
+    می‌شود که مسیر تصمیم Resend اجرا شده باشد.
+    """
+    lines = [
+        '[PREMIUM_CHECK]',
+        f'chat_id: {chat_id}',
+        f'message_id: {message_id}',
+        f'has_entity: {bool(has_entity)}',
+        f'entities: {entities if entities else "none"}',
+        f'media_type: {media_type if media_type else "none"}',
+        f'reply_to: {reply_to if reply_to is not None else "none"}',
+    ]
+    if server_check:
+        lines.append(f'server_check: {server_check}')
+    return '\n'.join(lines)
+
+
+def send_premium_check(block_text, *, chat_id=None):
+    """بلوک [PREMIUM_CHECK] — لاگ محلی همیشه؛ تلگرام با پرچم RESEND_DEBUG.
+
+    این بلاک «مشاهده» است نه اقدام؛ با سپرده ضد-اسپم مستقل ارسال می‌شود تا
+    کنار [PremiumResend] سرکوب نشود.
+    """
+    text = redact(block_text)
+    _premium_file_log.info('%s', text)
+    if not getattr(config, 'PREMIUM_EMOJI_RESEND_DEBUG', True):
+        return False
+    channel = getattr(config, 'PREMIUM_EMOJI_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('premium_check', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('premium_check'), _chat_ids(chat_id))
+    return True
 
 
 def send_premium_resend_debug(block_text, *, chat_id=None):

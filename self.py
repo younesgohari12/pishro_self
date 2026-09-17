@@ -89,6 +89,7 @@ from tts.voices import (
 PATTERN_PANEL = re.compile(r'^\.پنل$', re.IGNORECASE)
 PATTERN_CLOSE = re.compile(r'^\.بستن$', re.IGNORECASE)
 PATTERN_AWAY = re.compile(r'^\.away(?:\s+(.+))?$', re.IGNORECASE | re.DOTALL)
+PATTERN_PREMIUM = re.compile(r'^\.premium(?:\s+(.+))?$', re.IGNORECASE | re.DOTALL)
 PATTERN_INFO = re.compile(r'^\.info$', re.IGNORECASE)
 PATTERN_PING = re.compile(r'^\.ping$', re.IGNORECASE)
 PATTERN_SPAM = re.compile(r'^\.اسپم\s+(\d+)\s+(.+)$', re.IGNORECASE)
@@ -573,6 +574,77 @@ async def _run_connected_self(client, me, uid, sid):
                     parse_mode=None)
         except Exception as e:
             print(f"⚠️ خطا در away: {e}")
+
+    # ========================================
+    # 🔍 دستور .premium — کنترل Debug خط لوله Premium Emoji
+    #    .premium / .premium status / .premium debug on|off
+    #    در حالت Debug همهٔ مراحل ([PREMIUM_CHECK]، fetch سرور، تصمیم
+    #    Resend، نتیجه) به‌صورت زنده در Saved Messages گزارش می‌شود.
+    # ========================================
+    @client.on(events.NewMessage(outgoing=True, pattern=PATTERN_PREMIUM))
+    async def premium_cmd(event):
+        try:
+            args = (event.pattern_match.group(1) or '').strip()
+            await event.delete()
+            if not is_self_on():
+                return
+            manager = getattr(client, '_premium_resend_manager', None)
+            if manager is None:
+                await client.send_message(
+                    event.chat_id,
+                    '❌ مدیر Premium Resend روی این حساب نصب نیست.',
+                    parse_mode=None)
+                return
+            action, _, _rest = args.partition(' ')
+            action = action.lower()
+            if action in ('debug',):
+                sub = _rest.strip().lower()
+                if sub in ('on', 'روشن', '1'):
+                    manager.set_debug_reports(True)
+                    await client.send_message(
+                        event.chat_id,
+                        '🔧 حالت Debug Premium روشن شد؛ همهٔ مراحل (check، '
+                        'واکشی سرور، تصمیم Resend، نتیجه) در Saved Messages '
+                        'گزارش می‌شود.',
+                        parse_mode=None)
+                elif sub in ('off', 'خاموش', '0'):
+                    manager.set_debug_reports(False)
+                    await client.send_message(
+                        event.chat_id,
+                        '⛔️ حالت Debug Premium خاموش شد.',
+                        parse_mode=None)
+                else:
+                    state = '🟢 روشن' if manager.debug_reports else '🔴 خاموش'
+                    await client.send_message(
+                        event.chat_id,
+                        f'🔧 حالت Debug Premium: {state}\n'
+                        'استفاده: `.premium debug on` / `.premium debug off`',
+                        parse_mode=None)
+                return
+            # .premium / .premium status — گزارش وضعیت کامل
+            stats = manager.stats
+            engine = getattr(client, '_premium_emoji_converter', None)
+            cooldown_left = max(0, int(getattr(engine, 'disabled_until', 0))
+                                - time.monotonic()) if engine else 0
+            resend_state = ('🟢 روشن' if manager.resend_enabled()
+                            else '🔴 خاموش')
+            debug_state = ('🟢 روشن' if manager.debug_reports else '🔴 خاموش')
+            await client.send_message(
+                event.chat_id,
+                '🔍 **Premium Emoji Debug**\n\n'
+                f'• Resend Mode: {resend_state}\n'
+                f'• Debug Reports (Saved): {debug_state}\n'
+                f'• Engine Cooldown: '
+                f'{f"{cooldown_left}s مانده" if cooldown_left else "ندارد"}\n\n'
+                f'آمار: ارسال مجدد {stats["resent"]} | حذف {stats["deleted"]} | '
+                f'حفظ {stats["kept"]} | شکست {stats["failed"]}\n\n'
+                'دستورها:\n'
+                '• `.premium debug on` — گزارش زندهٔ مراحل در Saved Messages\n'
+                '• `.premium debug off`'
+                ' — قطع گزارش زنده',
+                parse_mode='md')
+        except Exception as e:
+            print(f"⚠️ خطا در premium: {e}")
 
     # ========================================
     # 💰 قیمت و تبدیل لحظه‌ای ارز دیجیتال
