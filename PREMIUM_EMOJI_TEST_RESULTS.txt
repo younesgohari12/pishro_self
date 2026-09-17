@@ -1,0 +1,19 @@
+Premium Emoji Injection Engine — test results
+Environment: Python 3.12; Telethon 1.44.0; isolated venv and storage; no live Telegram.
+
+Input baseline, before edits: 456 passed, 6 failed (10.81s).
+Injection tests: 36 passed.
+New persistent upgrade test: 1 passed (0.12s).
+Related injection/storage/session/translation/crypto tests: 134 passed (5.54s), before the separately run new upgrade test.
+Complete existing suite plus injection tests: 492 passed, 6 failed (9.90s).
+The same six baseline failures remain; there are no new failures.
+
+Commands:
+python -m pytest -q tests/test_premium_emoji_injector.py
+python -m pytest -q tests/storage_updates_extended.py::test_premium_emoji_defaults_preserve_previous_release_state
+python -m pytest -q --tb=short
+
+The upgrade test was tested using the staged extended copy of test_storage_updates.py.
+In the delivered ZIP it is appended to tests/test_storage_updates.py; no staged duplicate is shipped.
+Live emoji visuals, actual free/Premium permissions and all six categories require Telegram runtime metadata and were not live-tested.
+See PREMIUM_EMOJI_REPORT_FA.md for the unchanged baseline failure list and inline-panel limitation.

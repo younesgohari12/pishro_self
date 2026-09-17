@@ -1,0 +1,59 @@
+{
+  "release": "PishroSelf_v0.09.13_PREMIUM_EMOJI_PRODUCTION_CANDIDATE_SESSION_ACCESS_PATCHED",
+  "status": "production_candidate_pending_live_curation",
+  "live_metadata_attempted": false,
+  "source_document_ids": 210,
+  "valid_document_ids": null,
+  "rejected_document_ids": null,
+  "unresolved_document_ids": 210,
+  "actual_alt_count": null,
+  "curated_emoji_count": 0,
+  "visually_approved_curated_ids": 0,
+  "variant_mappings": 0,
+  "tests": {
+    "new_access_tests": {
+      "pass": 45,
+      "fail": 0
+    },
+    "access_and_curation": {
+      "pass": 80,
+      "fail": 0
+    },
+    "full_suite": {
+      "pass": 632,
+      "fail": 6
+    },
+    "original_zip_full_suite": {
+      "pass": 587,
+      "fail": 6
+    },
+    "preexisting_failures": [
+      "tests/test_admin_user_pagination.py::test_admin_users_page_two",
+      "tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values",
+      "tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming",
+      "tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded",
+      "tests/test_release_regression.py::test_release_markdown_escape",
+      "tests/test_user_streaming.py::test_broadcast_can_consume_iterator"
+    ],
+    "new_failure_names": [],
+    "basis": "Offline regression only. No live metadata, sample delivery or visual approval."
+  },
+  "live_blocker": "No project user session or connected deployment runtime is available in this workspace.",
+  "unchanged_curation_functions": [
+    "validation_report",
+    "curation_template",
+    "compile_curation",
+    "curation_run",
+    "mapping_status",
+    "smoke"
+  ],
+  "changed_original_files": [
+    "tools/premium_emoji_live_smoke.py",
+    "handlers/admin.py",
+    "bot/core.py",
+    "tests/test_premium_emoji_curation.py"
+  ],
+  "new_test_file": "tests/test_premium_emoji_session_access.py",
+  "runtime_injector_changed": false,
+  "release_bytecode_files": 0
+}

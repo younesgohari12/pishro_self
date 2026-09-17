@@ -1,0 +1,28 @@
+{
+  "status": "production_candidate_pending_live_curation",
+  "live_metadata_attempted": false,
+  "source_document_ids": 210,
+  "valid_document_ids": null,
+  "rejected_document_ids": null,
+  "unresolved_document_ids": 210,
+  "actual_alt_count": null,
+  "curated_emoji_count": 0,
+  "visually_approved_curated_ids": 0,
+  "variant_mappings": 0,
+  "mapping": {},
+  "counts_note": "All 210 IDs are unattempted/unresolved; valid and rejected counts are unknown, not zero.",
+  "mapping_requested": {
+    "🔥": null,
+    "❤️": null,
+    "😂": null,
+    "😎": null,
+    "👑": null,
+    "💎": null,
+    "🖤": null,
+    "👍": null,
+    "🙏": null,
+    "🫡": null,
+    "🫶": null,
+    "💯": null
+  }
+}

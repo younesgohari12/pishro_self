@@ -1,0 +1,50 @@
+{
+  "version": "0.09.7",
+  "base_version": "0.09.6_CUSTOM_EMOJI_MANAGER",
+  "release": "AUDITED_FIXED",
+  "tests_passed": 288,
+  "tests_failed": 0,
+  "baseline_tests_preserved": 278,
+  "hardening_tests_added": 10,
+  "custom_emoji_tests_passed": 52,
+  "compileall": "pass",
+  "runtime_module_imports": {
+    "passed": 62,
+    "failed": 0,
+    "environment": "offline compatibility stubs"
+  },
+  "live_telegram_tested": false,
+  "live_avalai_tested": false,
+  "test_network": "blocked",
+  "database_migration": "non-destructive",
+  "security_scan": {
+    "embedded_runtime_secrets": "none in executable source",
+    "eval_exec": "none",
+    "os_system": "none",
+    "shell_true": "none",
+    "unsafe_pickle_load": "none"
+  },
+  "key_fixes": [
+    "credentials moved from source to environment/.env",
+    "atomic JSON writes with fsync and safe known-good backup",
+    "safe shard rollover commit order prevents user-setting loss",
+    "startup shard-index reconciliation recovers missing index entries",
+    "nested user settings deep-copy isolation",
+    "cache updates only after successful durable JSON write",
+    "central rotating/redacted logging for DB/API/user actions",
+    "startup configuration/database gates and critical task cleanup",
+    "TTL task registry empty-owner cleanup"
+  ],
+  "added_code": [
+    "services/logging_service.py",
+    "tests/test_hardening_v097.py",
+    ".env.example",
+    ".gitignore",
+    "README_v0.09.7_FA.md",
+    "AUDIT_FIX_REPORT_v0.09.7_FA.md"
+  ],
+  "notes": [
+    "Existing UI and feature set were preserved.",
+    "Previous plaintext credentials must be rotated/revoked by the owner before production use."
+  ]
+}

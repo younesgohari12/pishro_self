@@ -1,0 +1,34 @@
+Premium Emoji Engine — production candidate verification
+Date: 2026-09-16
+Runtime: Python 3.12.14, Telethon 1.44.0, pytest 9.1.1
+All normal tests are offline; no live Telegram login or send was performed.
+
+Full suite: 552 passed, 6 failed, 10.72 seconds.
+All six failures are the same previously identified baseline failures.
+Emoji engine tests retained/extended: 94 cases, all passed within the full suite.
+Persistent upgrade tests include old and new emoji settings with actual SQLite/JSON fixtures.
+A final optional-smoke timeout/failure reporting extension was separately checked:
+1 passed in 0.24 seconds; it used a mock transport and sent no real messages.
+
+Baseline failures retained without unrelated fixes:
+tests/test_admin_user_pagination.py::test_admin_users_page_two
+tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values
+tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming
+tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded
+tests/test_release_regression.py::test_release_markdown_escape
+tests/test_user_streaming.py::test_broadcast_can_consume_iterator
+
+Benchmarks (synthetic alt fixtures only):
+Hot median 10.56 us; hot P95 11.14 us.
+Cold median 36.49 us; cold P95 52.40 us.
+Long-message cache: 20 retained entries; accounted 257760 bytes.
+Measured retained allocations: 271909 bytes; traced peak: 562865 bytes.
+Configured cache caps: 256 entries and 262144 accounted bytes per self client.
+Not an RSS ceiling, not a production capacity guarantee, and excludes network.
+
+Commands:
+python -m pytest -q --tb=short
+python tools/benchmark_premium_emoji.py
+
+Read PREMIUM_EMOJI_PRODUCTION_REPORT_FA.md for incomplete live-curation requirements.
+PREMIUM_EMOJI_MAPPING_STATUS.json deliberately does not invent a final validated mapping.

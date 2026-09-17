@@ -1,0 +1,11 @@
+config.py
+logs/
+sessions/
+db/
+banner/
+upload/
+message_cache/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo

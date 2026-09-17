@@ -1,0 +1,24 @@
+v0.07 - Unified Panel + Message Saver
+======================================
+- حذف گزینه عمومی «تنظیمات» از پنل .پنل
+- پنل اصلی: 🎙 تبدیل متن به صوت / 🤖 تبچی / 💾 سیو پیام / 📊 آمار / ⚙️ سایر قابلیت‌ها / ❌ خروج
+- قابلیت‌های قبلی پنل زیر «سایر قابلیت‌ها» منتقل شدند.
+- اضافه شدن handlers/save_message.py
+- اضافه شدن services/deleted_handler.py
+- اضافه شدن services/media_sender.py
+- اضافه شدن جداول deleted_messages و save_settings و جدول داخلی message_cache
+- جداسازی کامل تنظیمات، cache و تاریخچه با owner_id/user_id
+- ذخیره محلی media پیش از حذف و بازفرستادن بعد از event حذف
+- پشتیبانی متن، عکس، ویدیو، ویس، موزیک، فایل، استیکر، GIF، لوکیشن و مخاطب
+- مقصد قابل تغییر با ID یا @username
+- پاک شدن cache فعال هنگام خاموش کردن سرویس
+- حفظ کامل سیستم Tabchi v0.06 و AvalAI TTS
+
+v0.08 — Message Font Panel
+--------------------------
+- Added top-level «🔤 فونت» button to .پنل.
+- Added per-user message_font_enabled and message_font_style settings.
+- Added six native Telegram formatting styles: bold, italic, bold+italic, strike, underline, monospace.
+- Added real Telegram-entity preview.
+- Added automatic outgoing plain-text formatting handler.
+- Dot commands and inline-panel messages are excluded from formatting.

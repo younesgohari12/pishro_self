@@ -1,0 +1,19 @@
+AvalAI Gemini TTS hotfix
+========================
+
+Fixed runtime error:
+  not enough values to unpack (expected 2, got 0)
+
+Cause:
+  tts/avalai_tts.py used OpenAI SDK client.post(..., cast_to=dict).
+  Some OpenAI Python SDK 3.x versions crash while deserializing a bare dict type.
+
+Fix:
+  cast_to=dict[str, Any]
+
+No provider/model fallback was added.
+Endpoint remains:
+  https://api.avalai.ir/v1/text:synthesize
+Model remains:
+  gemini-2.5-flash-tts
+API key remains config.py-only.

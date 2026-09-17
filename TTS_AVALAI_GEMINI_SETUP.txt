@@ -1,0 +1,30 @@
+AvalAI Gemini TTS integration
+============================
+
+TTS provider/API: AvalAI only
+Base URL: https://api.avalai.ir/v1
+Model: gemini-2.5-flash-tts
+SDK: OpenAI Python SDK
+Output: MP3
+Fallback models/providers: NONE
+
+API Key:
+  Open config.py and set:
+  AVALAI_API_KEY = 'YOUR_REAL_AVALAI_API_KEY'
+
+No .env file and no environment variable is required.
+
+Install:
+  pip install -r requirements.txt
+
+Run:
+  python main.py
+
+TTS command in the existing self-bot:
+  .تبدیل متن به صوت متن دلخواه
+
+Or reply to a text message and send:
+  .تبدیل متن به صوت
+
+The bot shows the voice-style menu before generation. The selected style is
+persisted in voice_settings.json and reused as the current voice next time.

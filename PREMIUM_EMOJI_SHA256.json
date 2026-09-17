@@ -1,0 +1,10 @@
+{
+  "self.py": "d6c6ccb430682ce772b15084f15fce0960d209e2cb322c7294f10e3467fd1ccc",
+  "config.py": "a3a19331129dd75ee6cf20f0f6218d9b674fd5bfcab3b5cdf7888c904912eae6",
+  "services/custom_emoji_service.py": "10772230e3ea5076f8047289e7db3bfe73cdae173b2187f14d191df28d82b1ff",
+  "tests/test_storage_updates.py": "d134840c4420ff4278e1bd4da5f9664b44805db1926aeab22234c11ce4dd6702",
+  "services/premium_emoji_injector.py": "f3aa287b2b9e87437487abfd381c86fc71105cb7faab0567660e5908256dc636",
+  "tests/test_premium_emoji_injector.py": "b713de0617ffe534e597f431095692c4d0d5af27dee864f97c6e6bde71588a45",
+  "PREMIUM_EMOJI_REPORT_FA.md": "1341ac2d78eb712a8873d647d04c78a1d31b52b8aad01a0a47e38ba3729cd1ba",
+  "PREMIUM_EMOJI_TEST_RESULTS.txt": "c4519f6a66c2f359a3eebb565af30e092a82d1689a7632e5f1ba624b40e166f7"
+}

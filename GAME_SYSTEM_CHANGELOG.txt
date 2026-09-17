@@ -1,0 +1,26 @@
+Telegram Bot - Diamond Game Release
+===================================
+
+Added:
+- Persistent users, games, game_settings and diamond_transactions tables.
+- Atomic creator reservation, opponent join, winner reward and tax settlement.
+- SQLite BEGIN IMMEDIATE protection against concurrent joins/double spending.
+- GAME_STAKE, GAME_WIN, GAME_REFUND, ADMIN_ADD and ADMIN_REMOVE ledger entries.
+- OPEN, LOCKED, FINISHED, CANCELLED and EXPIRED game states.
+- Main-group-only Persian commands and 10-second balance response cleanup.
+- Admin game settings, statistics, history and search screens.
+- Jalali/Tehran display timestamps with UTC database timestamps.
+- Restart-safe expiration scheduler and automatic creator refunds.
+- Backward-compatible migration from existing JSON wallet balances.
+
+Validation:
+- Baseline tests preserved.
+- Atomic game tests include 20 simultaneous join attempts.
+- Double join, own-game join, insufficient balance, callback binding,
+  cancellation, expiration, ledger and tax snapshot cases covered.
+
+Forced Join / Admin UI Fix:
+- Replaced the invalid get_participant path with Telethon get_permissions.
+- Unresolved channels and permission errors now fail closed instead of bypassing access.
+- Left/banned users are blocked; restricted users who remain members are accepted.
+- Added direct «📍 گروه شرط‌بندی» buttons to both current and legacy admin panels.

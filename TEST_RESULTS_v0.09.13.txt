@@ -1,0 +1,32 @@
+PishroSelf v0.09.13
+Python 3.12 / Linux
+
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 49%]
+........................................................................ [ 65%]
+........................................................................ [ 82%]
+........................................................................ [ 98%]
+.......                                                                  [100%]
+439 passed in 8.89s
+
+Live market smoke test (isolated temporary data):
+{"coin": "bitcoin", "usd_positive": true, "toman_positive": true, "toman_source": "والکس", "catalogue_size": 21172}
+
+Independent real HTTP: CoinGecko ping and BTC/USDT USD prices returned 200.
+Nobitex unavailable from this environment; Wallex fallback returned a usable USDT/TMN quote.
+No Telegram authentication/session connection performed.
+No paid AvalAI/Google request performed. Translation fix uses mocked provider responses.
+
+Additional coverage:
+- Plain prose translation output, accidental JSON/fence wrappers, intentional JSON/code preservation.
+- Previous translation cache namespace bypass; actual self handler response formatting.
+- Full CoinGecko catalogue names/symbols/IDs, Persian aliases and verified localized lookup.
+- Symbol ambiguity, tiny prices, timestamp freshness, invalid prices, shared in-flight fetch.
+- Nobitex IRR-to-Toman and Wallex already-Toman conversion; partial FX outage.
+- API key headers, disabled redirects, 429 cooldown, enabled self command and panel.
+- Atomic/idempotent authorized config patch after backup, unknown preferences/data preservation.
+
+Billing, wallet, database schema and session recovery sources byte-identical to v0.09.12.
+All prior config assignments unchanged except authorized CoinGecko key and config registry extension.
+105 Python files parsed successfully. No active database/session/env files shipped.

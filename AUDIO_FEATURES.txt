@@ -1,0 +1,32 @@
+قابلیت‌های صوتی AvalAI
+=====================
+
+STT:
+- API: AvalAI
+- Endpoint: /v1/audio/transcriptions
+- Model: gpt-transcribe
+
+TTS:
+- API: AvalAI ONLY
+- Base URL: https://api.avalai.ir/v1
+- Endpoint: /v1/text:synthesize (called through OpenAI SDK client.post)
+- SDK: OpenAI Python SDK
+- Model: gemini-2.5-flash-tts ONLY
+- Output: MP3
+- Style: per-user prompt from tts/voices.py
+- Fallback: NONE
+
+Voice styles:
+👨 مرد
+👩 زن
+🧑 جوان
+👴 پیر
+🎧 رسمی
+😎 خودمونی
+🤖 رباتی
+😡 عصبانی
+❤️ مهربان
+
+API errors are shown as:
+❌ خطای ساخت صوت:
+<real API error>

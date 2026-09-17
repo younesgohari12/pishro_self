@@ -1,0 +1,120 @@
+....F................................................................... [ 10%]
+..............................................F...................FF.... [ 20%]
+........................................................................ [ 30%]
+........................................................................ [ 41%]
+........................................................................ [ 51%]
+........................................................................ [ 61%]
+...................F.................................................... [ 72%]
+........................................................................ [ 82%]
+.......................................................................F [ 92%]
+..................................................                       [100%]
+=================================== FAILURES ===================================
+__________________________ test_admin_users_page_two ___________________________
+
+    def test_admin_users_page_two():
+        controller = AdminController.__new__(AdminController)
+        controller._profile = lambda uid: {
+            "username": f"user{uid}",
+            "first_name": f"User {uid}",
+        }
+    
+        import handlers.admin as admin_module
+    
+        old_db = admin_module.db.get_all_user_ids
+        old_profiles = admin_module.models.list_profiles
+        try:
+            admin_module.db.get_all_user_ids = lambda: list(range(1, 81))
+            admin_module.models.list_profiles = lambda limit=500: []
+    
+            text, buttons = controller.render_users(page=2)
+    
+>           assert "صفحه: **2/2**" in text
+E           AssertionError: assert 'صفحه: **2/2**' in '👥 **کاربران**\n\nتعداد ثبت\u200cشده: **0**\nصفحه: **1/1**\n\nبرای مشاهده جزئیات یک کاربر را انتخاب کنید:'
+
+tests/test_admin_user_pagination.py:21: AssertionError
+___________ test_config_is_python_only_and_validates_without_values ____________
+
+    def test_config_is_python_only_and_validates_without_values():
+        import ast
+        import config
+        source = (ROOT / 'config.py').read_text(encoding='utf-8')
+        tree = ast.parse(source)
+        # Local credentials in config.py are intentional for this user-requested release.
+        assert not any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                       and n.func.id in {'_env', '_env_int', '_env_float', '_load_dotenv'}
+                       for n in ast.walk(tree))
+        assert '.env' not in source
+>       assert 'os.getenv' not in source and 'os.environ' not in source
+E       assert ('os.getenv' not in "import os\n...PI_BASE')}\n"
+E         
+E         'os.getenv' is contained here:
+E           URS = int(os.getenv('TRIAL_DURATION_HOURS', '24'))
+E         ?           +++++++++
+E           
+E           
+E           # ========================================...
+E         
+E         ...Full output truncated (216 lines hidden), use '-vv' to show)
+
+tests/test_hardening_v097.py:28: AssertionError
+____________ test_iter_user_ids_does_not_hold_lock_while_consuming _____________
+
+    def test_iter_user_ids_does_not_hold_lock_while_consuming():
+        import db
+    
+        original = db._index
+        db._index = {str(i): i for i in range(100)}
+        try:
+            iterator = db.iter_user_ids()
+>           next(iterator)
+E           StopIteration
+
+tests/test_memory_streaming_lock_pagination.py:12: StopIteration
+__________________ test_large_user_pagination_is_page_bounded __________________
+
+    def test_large_user_pagination_is_page_bounded():
+        import db
+    
+        original = db._index
+        db._index = {str(i): i for i in range(5000)}
+        try:
+            page, total = db.get_user_ids_page(50, 20)
+>           assert len(page) == 20
+E           assert 0 == 20
+E            +  where 0 = len([])
+
+tests/test_memory_streaming_lock_pagination.py:34: AssertionError
+_________________________ test_release_markdown_escape _________________________
+
+    def test_release_markdown_escape():
+        from services.markdown import escape_md
+>       assert escape_md("a_b*c[1]") == r"a\\_b\\*c\\[1\\]"
+E       AssertionError: assert 'a\\_b\\*c\\[1\\]' == 'a\\\\_b\\\\*c\\\\[1\\\\]'
+E         
+E         - a\\_b\\*c\\[1\\]
+E         ?  -    -  -    -
+E         + a\_b\*c\[1\]
+
+tests/test_release_regression.py:11: AssertionError
+_____________________ test_broadcast_can_consume_iterator ______________________
+
+    def test_broadcast_can_consume_iterator():
+        from services.broadcast_queue import BroadcastJob
+    
+        async def sender(_uid):
+            return None
+    
+        job = BroadcastJob(targets=db.iter_user_ids(), sender=sender)
+>       assert next(iter(job.targets)) is not None
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+tests/test_user_streaming.py:39: StopIteration
+=========================== short test summary info ============================
+FAILED tests/test_admin_user_pagination.py::test_admin_users_page_two - Asser...
+FAILED tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values
+FAILED tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming
+FAILED tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded
+FAILED tests/test_release_regression.py::test_release_markdown_escape - Asser...
+FAILED tests/test_user_streaming.py::test_broadcast_can_consume_iterator - St...
+6 failed, 692 passed in 10.76s

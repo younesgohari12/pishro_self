@@ -1,0 +1,120 @@
+OFFLINE REGRESSION ONLY — not live/visual approval.
+Targeted: 80 passed, 0 failed (45 new access/security tests + 35 existing curation tests).
+
+PATCHED RELEASE FULL SUITE
+....F................................................................... [ 11%]
+..............................................F...................FF.... [ 22%]
+........................................................................ [ 33%]
+........................................................................ [ 45%]
+........................................................................ [ 56%]
+................................F....................................... [ 67%]
+........................................................................ [ 78%]
+........................................................................ [ 90%]
+...........F..................................................           [100%]
+=================================== FAILURES ===================================
+__________________________ test_admin_users_page_two ___________________________
+tests/test_admin_user_pagination.py:21: in test_admin_users_page_two
+    assert "صفحه: **2/2**" in text
+E   AssertionError: assert 'صفحه: **2/2**' in '👥 **کاربران**\n\nتعداد ثبت\u200cشده: **0**\nصفحه: **1/1**\n\nبرای مشاهده جزئیات یک کاربر را انتخاب کنید:'
+___________ test_config_is_python_only_and_validates_without_values ____________
+tests/test_hardening_v097.py:28: in test_config_is_python_only_and_validates_without_values
+    assert 'os.getenv' not in source and 'os.environ' not in source
+E   assert ('os.getenv' not in "import os\n...PI_BASE')}\n"
+E     
+E     'os.getenv' is contained here:
+E       URS = int(os.getenv('TRIAL_DURATION_HOURS', '24'))
+E     ?           +++++++++
+E       
+E       
+E       # ========================================...
+E     
+E     ...Full output truncated (216 lines hidden), use '-vv' to show)
+____________ test_iter_user_ids_does_not_hold_lock_while_consuming _____________
+tests/test_memory_streaming_lock_pagination.py:12: in test_iter_user_ids_does_not_hold_lock_while_consuming
+    next(iterator)
+E   StopIteration
+__________________ test_large_user_pagination_is_page_bounded __________________
+tests/test_memory_streaming_lock_pagination.py:34: in test_large_user_pagination_is_page_bounded
+    assert len(page) == 20
+E   assert 0 == 20
+E    +  where 0 = len([])
+_________________________ test_release_markdown_escape _________________________
+tests/test_release_regression.py:11: in test_release_markdown_escape
+    assert escape_md("a_b*c[1]") == r"a\\_b\\*c\\[1\\]"
+E   AssertionError: assert 'a\\_b\\*c\\[1\\]' == 'a\\\\_b\\\\*c\\\\[1\\\\]'
+E     
+E     - a\\_b\\*c\\[1\\]
+E     ?  -    -  -    -
+E     + a\_b\*c\[1\]
+_____________________ test_broadcast_can_consume_iterator ______________________
+tests/test_user_streaming.py:39: in test_broadcast_can_consume_iterator
+    assert next(iter(job.targets)) is not None
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=========================== short test summary info ============================
+FAILED tests/test_admin_user_pagination.py::test_admin_users_page_two - Asser...
+FAILED tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values
+FAILED tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming
+FAILED tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded
+FAILED tests/test_release_regression.py::test_release_markdown_escape - Asser...
+FAILED tests/test_user_streaming.py::test_broadcast_can_consume_iterator - St...
+6 failed, 632 passed in 12.41s
+
+ORIGINAL ZIP FULL SUITE (comparison)
+....F................................................................... [ 12%]
+..............................................F...................FF.... [ 24%]
+........................................................................ [ 36%]
+........................................................................ [ 48%]
+...........................................................F............ [ 60%]
+........................................................................ [ 72%]
+........................................................................ [ 84%]
+......................................F................................. [ 97%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+__________________________ test_admin_users_page_two ___________________________
+tests/test_admin_user_pagination.py:21: in test_admin_users_page_two
+    assert "صفحه: **2/2**" in text
+E   AssertionError: assert 'صفحه: **2/2**' in '👥 **کاربران**\n\nتعداد ثبت\u200cشده: **0**\nصفحه: **1/1**\n\nبرای مشاهده جزئیات یک کاربر را انتخاب کنید:'
+___________ test_config_is_python_only_and_validates_without_values ____________
+tests/test_hardening_v097.py:28: in test_config_is_python_only_and_validates_without_values
+    assert 'os.getenv' not in source and 'os.environ' not in source
+E   assert ('os.getenv' not in "import os\n...PI_BASE')}\n"
+E     
+E     'os.getenv' is contained here:
+E       URS = int(os.getenv('TRIAL_DURATION_HOURS', '24'))
+E     ?           +++++++++
+E       
+E       
+E       # ========================================...
+E     
+E     ...Full output truncated (216 lines hidden), use '-vv' to show)
+____________ test_iter_user_ids_does_not_hold_lock_while_consuming _____________
+tests/test_memory_streaming_lock_pagination.py:12: in test_iter_user_ids_does_not_hold_lock_while_consuming
+    next(iterator)
+E   StopIteration
+__________________ test_large_user_pagination_is_page_bounded __________________
+tests/test_memory_streaming_lock_pagination.py:34: in test_large_user_pagination_is_page_bounded
+    assert len(page) == 20
+E   assert 0 == 20
+E    +  where 0 = len([])
+_________________________ test_release_markdown_escape _________________________
+tests/test_release_regression.py:11: in test_release_markdown_escape
+    assert escape_md("a_b*c[1]") == r"a\\_b\\*c\\[1\\]"
+E   AssertionError: assert 'a\\_b\\*c\\[1\\]' == 'a\\\\_b\\\\*c\\\\[1\\\\]'
+E     
+E     - a\\_b\\*c\\[1\\]
+E     ?  -    -  -    -
+E     + a\_b\*c\[1\]
+_____________________ test_broadcast_can_consume_iterator ______________________
+tests/test_user_streaming.py:39: in test_broadcast_can_consume_iterator
+    assert next(iter(job.targets)) is not None
+           ^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=========================== short test summary info ============================
+FAILED tests/test_admin_user_pagination.py::test_admin_users_page_two - Asser...
+FAILED tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values
+FAILED tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming
+FAILED tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded
+FAILED tests/test_release_regression.py::test_release_markdown_escape - Asser...
+FAILED tests/test_user_streaming.py::test_broadcast_can_consume_iterator - St...
+6 failed, 587 passed in 13.18s

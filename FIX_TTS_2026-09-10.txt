@@ -1,0 +1,11 @@
+AvalAI Gemini TTS - 2026-09-10
+================================
+
+- Removed every TTS fallback model/provider.
+- TTS is locked to gemini-2.5-flash-tts.
+- Added tts/avalai_tts.py with async text_to_speech(text, user_id).
+- Added tts/voices.py with 9 persistent voice/style presets.
+- Uses OpenAI SDK with base_url=https://api.avalai.ir/v1.
+- AVALAI_API_KEY is loaded directly from config.py; no .env/environment variable is used.
+- Real AvalAI/OpenAI SDK errors are shown to the user.
+- Output is saved as MP3 and its path is returned.

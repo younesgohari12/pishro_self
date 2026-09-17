@@ -1,0 +1,25 @@
+PishroSelf v0.09.12
+Python 3.12 / Linux
+
+........................................................................ [ 17%]
+........................................................................ [ 35%]
+........................................................................ [ 53%]
+........................................................................ [ 71%]
+........................................................................ [ 89%]
+..........................................                               [100%]
+402 passed in 8.21s
+
+Verification notes:
+- Real isolated SQLite/JSON; synthetic Telegram sessions.
+- Half-hour boundaries, offline catch-up, repeated/concurrent settlement, clock rollback.
+- Trial expiry during downtime, paused carry, zero/top-up and admin adjustment transitions.
+- Clock/wallet/ledger transaction rollback injected with an SQLite trigger.
+- Separate fresh processes/release folders and backup restore preserve billing state.
+- Format 1 -> 2 migration preserves all old table rows and saved config.
+- Required billing table loss blocks startup; older-format backups remain restorable.
+- Actual self command handler tested with replied text and destination message.
+- Main-bot translation menu/route removed; old callbacks show self-command guidance.
+- Provider request/response contracts mocked; chunking, cache, truncation/error handling tested.
+- No real Telegram connection, AvalAI charge or Google Cloud request.
+- Translation quality and live model/key availability were NOT measured.
+- 65 existing config assignments unchanged (except config key registry extension).

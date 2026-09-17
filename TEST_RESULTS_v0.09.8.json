@@ -1,0 +1,21 @@
+{
+  "version": "0.09.8",
+  "base_version": "0.09.7_AUDITED_FIXED",
+  "feature": "CRYPTO_READY",
+  "compileall": "pass",
+  "tests_executed": 49,
+  "tests_passed": 49,
+  "tests_failed": 0,
+  "crypto_tests": 6,
+  "network_live_api_tested": false,
+  "telethon_full_suite_rerun": false,
+  "telethon_full_suite_reason": "Telethon was unavailable in the sandbox and package installation network access was unavailable.",
+  "security": {
+    "embedded_runtime_secrets": "none detected in executable Python source",
+    "dangerous_primitives_scan": "pass"
+  },
+  "notes": [
+    "The incoming v0.09.7 audit report records 288/288 historical tests passing before this feature change.",
+    "Current feature tests use mocked provider payloads for deterministic conversion, cache, parser, and database validation."
+  ]
+}

@@ -1,0 +1,40 @@
+Telegram SelfBot v0.09 — Trial / Support / Admin
+=================================================
+
+New user-facing main-bot buttons:
+- 🎁 24 تست رایگان
+- 🎧 پشتیبانی
+
+Admin panel:
+- /panel
+- Eligible admins also see 👑 مدیریت in the main bot menu.
+
+Free trial rules:
+- One successful 24-hour trial per Telegram user_id.
+- The trial is marked used only after Telegram login succeeds.
+- For a free trial, the logged-in Telegram account must match the bot user_id.
+- Active trial usage does not burn diamonds or charge the self-start fee.
+- Expiry never clears the historical `used` flag.
+- If there is enough paid balance after expiry, paid service can continue.
+- Otherwise the self session is stopped and `self_enabled` is disabled.
+
+Support:
+- Ticket content may be text or Telegram media; the original message is forwarded
+  to eligible admins with ticket metadata and permission-aware action buttons.
+- Direct-support contacts are managed from the admin panel and rendered as
+  Telegram URL buttons.
+
+Admin roles:
+- Owner: config.ADMIN_ID, always full access.
+- Full: every v0.09 permission.
+- Limited: selected permission list stored as JSON in the admins table.
+
+SQLite tables added (in db/tabchi.sqlite3):
+- user_profiles
+- free_trial
+- tickets
+- ticket_messages
+- support_contacts
+- admins
+
+Existing Tabchi, Message Saver, Font, Wallet and TTS data are not reset.

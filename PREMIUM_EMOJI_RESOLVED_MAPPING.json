@@ -1,0 +1,5571 @@
+{
+  "resolved_at": "2026-09-17T08:57:49+00:00",
+  "source": "https://t.me/CustomEmojiPack",
+  "method": "messages.getCustomEmojiDocuments",
+  "strict_semantic_matching": true,
+  "totals": {
+    "checked": 638,
+    "resolved": 638,
+    "missing": 0,
+    "calls": 7
+  },
+  "fallback_document_id": {
+    "document_id": 5938388342281343001,
+    "telegram_alt": "🙄",
+    "in_target_list": false,
+    "decision": "REJECTED: telegram alt is '🙄', not a target emoji"
+  },
+  "selection_rule": "alt must exactly equal the target emoji (VS16-insensitive); max 15 ids per emoji; empty list = checked but inactive",
+  "documents": {
+    "5415647572037500278": {
+      "document_id": 5415647572037500278,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5417849099258987952": {
+      "document_id": 5417849099258987952,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5294103717002371452": {
+      "document_id": 5294103717002371452,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5260448052623197709": {
+      "document_id": 5260448052623197709,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199819173286397467": {
+      "document_id": 5199819173286397467,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5440716905302217580": {
+      "document_id": 5440716905302217580,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5294315493249805406": {
+      "document_id": 5294315493249805406,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5321282377425643440": {
+      "document_id": 5321282377425643440,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199593567244272818": {
+      "document_id": 5199593567244272818,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199496823105930855": {
+      "document_id": 5199496823105930855,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5456294528346512296": {
+      "document_id": 5456294528346512296,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5233435646088989699": {
+      "document_id": 5233435646088989699,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5202007283030050939": {
+      "document_id": 5202007283030050939,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199947133247046979": {
+      "document_id": 5199947133247046979,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5454062128900103118": {
+      "document_id": 5454062128900103118,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5201866919203850475": {
+      "document_id": 5201866919203850475,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199444557648905765": {
+      "document_id": 5199444557648905765,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199446627823143100": {
+      "document_id": 5199446627823143100,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5332655223192185693": {
+      "document_id": 5332655223192185693,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5201919541143159152": {
+      "document_id": 5201919541143159152,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199508110279983066": {
+      "document_id": 5199508110279983066,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5334618332484105247": {
+      "document_id": 5334618332484105247,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199780290947465970": {
+      "document_id": 5199780290947465970,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5346283201667024924": {
+      "document_id": 5346283201667024924,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199896444043019019": {
+      "document_id": 5199896444043019019,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5334871757029403436": {
+      "document_id": 5334871757029403436,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5202062138352355049": {
+      "document_id": 5202062138352355049,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199631431675953224": {
+      "document_id": 5199631431675953224,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5442927696768181716": {
+      "document_id": 5442927696768181716,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5440786543901978135": {
+      "document_id": 5440786543901978135,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5334692493684399330": {
+      "document_id": 5334692493684399330,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199939028643761333": {
+      "document_id": 5199939028643761333,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199622034287510774": {
+      "document_id": 5199622034287510774,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199809780192919852": {
+      "document_id": 5199809780192919852,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199606933182501116": {
+      "document_id": 5199606933182501116,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199408870765643027": {
+      "document_id": 5199408870765643027,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199664421319755204": {
+      "document_id": 5199664421319755204,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199926113677100887": {
+      "document_id": 5199926113677100887,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5201659674146916776": {
+      "document_id": 5201659674146916776,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5202047629952828287": {
+      "document_id": 5202047629952828287,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5335038934336432784": {
+      "document_id": 5335038934336432784,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5310052631379462280": {
+      "document_id": 5310052631379462280,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199762256379790227": {
+      "document_id": 5199762256379790227,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5202044498921673067": {
+      "document_id": 5202044498921673067,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199750299190838577": {
+      "document_id": 5199750299190838577,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199516949322680181": {
+      "document_id": 5199516949322680181,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5456214298357426109": {
+      "document_id": 5456214298357426109,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5332636896566732841": {
+      "document_id": 5332636896566732841,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199750440924759645": {
+      "document_id": 5199750440924759645,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5456669423156874912": {
+      "document_id": 5456669423156874912,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5308041766346181618": {
+      "document_id": 5308041766346181618,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199884950710535129": {
+      "document_id": 5199884950710535129,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199946854074173775": {
+      "document_id": 5199946854074173775,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199907898720798436": {
+      "document_id": 5199907898720798436,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5456120311588083160": {
+      "document_id": 5456120311588083160,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5201769986086946005": {
+      "document_id": 5201769986086946005,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5321369599621490581": {
+      "document_id": 5321369599621490581,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5334598253511992444": {
+      "document_id": 5334598253511992444,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199891187003048420": {
+      "document_id": 5199891187003048420,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5334537548444234926": {
+      "document_id": 5334537548444234926,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5199897715353339070": {
+      "document_id": 5199897715353339070,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5442732434670003082": {
+      "document_id": 5442732434670003082,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5201679409521641719": {
+      "document_id": 5201679409521641719,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5321407519887747396": {
+      "document_id": 5321407519887747396,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5202146577409394203": {
+      "document_id": 5202146577409394203,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5334910497634413105": {
+      "document_id": 5334910497634413105,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5309862755170273267": {
+      "document_id": 5309862755170273267,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5199499580474935914": {
+      "document_id": 5199499580474935914,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5273971074982233662": {
+      "document_id": 5273971074982233662,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5310130172719026033": {
+      "document_id": 5310130172719026033,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030878513085552308": {
+      "document_id": 6030878513085552308,
+      "alt": "🔪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030627038455403494": {
+      "document_id": 6030627038455403494,
+      "alt": "⛏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028310646628554529": {
+      "document_id": 6028310646628554529,
+      "alt": "🔪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028319434131641884": {
+      "document_id": 6028319434131641884,
+      "alt": "🛐",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028130627369330466": {
+      "document_id": 6028130627369330466,
+      "alt": "🎭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028585511650596550": {
+      "document_id": 6028585511650596550,
+      "alt": "👻",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028293496824141193": {
+      "document_id": 6028293496824141193,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028576067017511683": {
+      "document_id": 6028576067017511683,
+      "alt": "🕷",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028477385848918510": {
+      "document_id": 6028477385848918510,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030843418907776703": {
+      "document_id": 6030843418907776703,
+      "alt": "💟",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028358157556782320": {
+      "document_id": 6028358157556782320,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028579674790041462": {
+      "document_id": 6028579674790041462,
+      "alt": "☦️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030467553434802420": {
+      "document_id": 6030467553434802420,
+      "alt": "🖤",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028093415772657213": {
+      "document_id": 6028093415772657213,
+      "alt": "📓",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030643260546882238": {
+      "document_id": 6030643260546882238,
+      "alt": "👀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028157801627391042": {
+      "document_id": 6028157801627391042,
+      "alt": "⚰️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028450031202210426": {
+      "document_id": 6028450031202210426,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030509257567245697": {
+      "document_id": 6030509257567245697,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028145994762293850": {
+      "document_id": 6028145994762293850,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030800473529783587": {
+      "document_id": 6030800473529783587,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028603855455917564": {
+      "document_id": 6028603855455917564,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028412076576216340": {
+      "document_id": 6028412076576216340,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028151865982587882": {
+      "document_id": 6028151865982587882,
+      "alt": "✝️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028398938271258010": {
+      "document_id": 6028398938271258010,
+      "alt": "✡️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028143589580607996": {
+      "document_id": 6028143589580607996,
+      "alt": "💀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030880239662404337": {
+      "document_id": 6030880239662404337,
+      "alt": "🖤",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030835572002526073": {
+      "document_id": 6030835572002526073,
+      "alt": "☺️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028444945960932052": {
+      "document_id": 6028444945960932052,
+      "alt": "❤️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028431189180683416": {
+      "document_id": 6028431189180683416,
+      "alt": "⛓",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028070583726510691": {
+      "document_id": 6028070583726510691,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028322084126462756": {
+      "document_id": 6028322084126462756,
+      "alt": "🛐",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028481474657784933": {
+      "document_id": 6028481474657784933,
+      "alt": "🎭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028284318479030064": {
+      "document_id": 6028284318479030064,
+      "alt": "🔗",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028593251181663251": {
+      "document_id": 6028593251181663251,
+      "alt": "🕸",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030444738568524718": {
+      "document_id": 6030444738568524718,
+      "alt": "🧪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028300059534168991": {
+      "document_id": 6028300059534168991,
+      "alt": "⭐️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030444794403099554": {
+      "document_id": 6030444794403099554,
+      "alt": "🤍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028316169956497972": {
+      "document_id": 6028316169956497972,
+      "alt": "🔪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028535939138065378": {
+      "document_id": 6028535939138065378,
+      "alt": "🖇",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028342584005366467": {
+      "document_id": 6028342584005366467,
+      "alt": "🖇",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028458359143797487": {
+      "document_id": 6028458359143797487,
+      "alt": "💋",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030436307547722441": {
+      "document_id": 6030436307547722441,
+      "alt": "👁",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030449278348956975": {
+      "document_id": 6030449278348956975,
+      "alt": "💀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030599507715036314": {
+      "document_id": 6030599507715036314,
+      "alt": "🫵",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030368331100329091": {
+      "document_id": 6030368331100329091,
+      "alt": "🐈‍⬛",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028146153676084823": {
+      "document_id": 6028146153676084823,
+      "alt": "🦇",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030326880370955203": {
+      "document_id": 6030326880370955203,
+      "alt": "🎸",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030599524894905379": {
+      "document_id": 6030599524894905379,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028164716524739336": {
+      "document_id": 6028164716524739336,
+      "alt": "😇",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028119207051268763": {
+      "document_id": 6028119207051268763,
+      "alt": "🍷",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028617676660676389": {
+      "document_id": 6028617676660676389,
+      "alt": "✡️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030763910473192721": {
+      "document_id": 6030763910473192721,
+      "alt": "🩸",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028114018730776058": {
+      "document_id": 6028114018730776058,
+      "alt": "✡️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028573623181121496": {
+      "document_id": 6028573623181121496,
+      "alt": "👹",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028138319655736001": {
+      "document_id": 6028138319655736001,
+      "alt": "❤️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028374104770352135": {
+      "document_id": 6028374104770352135,
+      "alt": "👹",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030666509204854204": {
+      "document_id": 6030666509204854204,
+      "alt": "🎂",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028298625015092970": {
+      "document_id": 6028298625015092970,
+      "alt": "👩‍❤️‍👨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030740275268163819": {
+      "document_id": 6030740275268163819,
+      "alt": "✡️",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028535896188391968": {
+      "document_id": 6028535896188391968,
+      "alt": "💉",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028405488096384603": {
+      "document_id": 6028405488096384603,
+      "alt": "❤‍🔥",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030661681661613132": {
+      "document_id": 6030661681661613132,
+      "alt": "🦇",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030706529710118027": {
+      "document_id": 6030706529710118027,
+      "alt": "🖤",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028193552935162672": {
+      "document_id": 6028193552935162672,
+      "alt": "🩸",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030427064778102202": {
+      "document_id": 6030427064778102202,
+      "alt": "🩻",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030438656894834179": {
+      "document_id": 6030438656894834179,
+      "alt": "🐈‍⬛",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6030608355347666053": {
+      "document_id": 6030608355347666053,
+      "alt": "🕸",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028288591971488929": {
+      "document_id": 6028288591971488929,
+      "alt": "🔫",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028337627613107776": {
+      "document_id": 6028337627613107776,
+      "alt": "👼",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6028143641120215925": {
+      "document_id": 6028143641120215925,
+      "alt": "🖤",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5936064722024536128": {
+      "document_id": 5936064722024536128,
+      "alt": "🇮🇷",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5776096981457836889": {
+      "document_id": 5776096981457836889,
+      "alt": "🇮🇷",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5974184051425155786": {
+      "document_id": 5974184051425155786,
+      "alt": "🛍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5969903528104172292": {
+      "document_id": 5969903528104172292,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5836967517129546441": {
+      "document_id": 5836967517129546441,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5836705150462337369": {
+      "document_id": 5836705150462337369,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5807866102927071266": {
+      "document_id": 5807866102927071266,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5800761466810278569": {
+      "document_id": 5800761466810278569,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5803051929919560068": {
+      "document_id": 5803051929919560068,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5805523593404095489": {
+      "document_id": 5805523593404095489,
+      "alt": "‼️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5805624164358298948": {
+      "document_id": 5805624164358298948,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5803373653034802245": {
+      "document_id": 5803373653034802245,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5816591513672491604": {
+      "document_id": 5816591513672491604,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5801107739958583440": {
+      "document_id": 5801107739958583440,
+      "alt": "🆕",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5798882684906250403": {
+      "document_id": 5798882684906250403,
+      "alt": "📰",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5855003643878579964": {
+      "document_id": 5855003643878579964,
+      "alt": "🏐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5836934557550516347": {
+      "document_id": 5836934557550516347,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5816457635246906894": {
+      "document_id": 5816457635246906894,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5803131257965518938": {
+      "document_id": 5803131257965518938,
+      "alt": "🟢",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5805229057431840048": {
+      "document_id": 5805229057431840048,
+      "alt": "🔴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5800638944278224230": {
+      "document_id": 5800638944278224230,
+      "alt": "▶️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5803043193956082956": {
+      "document_id": 5803043193956082956,
+      "alt": "🔄",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5800833733930000185": {
+      "document_id": 5800833733930000185,
+      "alt": "💵",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5800883392341878728": {
+      "document_id": 5800883392341878728,
+      "alt": "📚",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5802950555806474012": {
+      "document_id": 5802950555806474012,
+      "alt": "🔴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5802976317020315445": {
+      "document_id": 5802976317020315445,
+      "alt": "🔴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5832376463378096000": {
+      "document_id": 5832376463378096000,
+      "alt": "📎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6044130428518931774": {
+      "document_id": 6044130428518931774,
+      "alt": "📎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6041629207069465835": {
+      "document_id": 6041629207069465835,
+      "alt": "📶",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6012808185511943224": {
+      "document_id": 6012808185511943224,
+      "alt": "🛜",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5974308291944127344": {
+      "document_id": 5974308291944127344,
+      "alt": "🌊",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5974538171478710896": {
+      "document_id": 5974538171478710896,
+      "alt": "🌊",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5830159190806503644": {
+      "document_id": 5830159190806503644,
+      "alt": "🇺🇸",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5832334909569507238": {
+      "document_id": 5832334909569507238,
+      "alt": "🇺🇸",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6044385566756182879": {
+      "document_id": 6044385566756182879,
+      "alt": "🇮🇱",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5832718544638321058": {
+      "document_id": 5832718544638321058,
+      "alt": "🇱🇧",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5830420599696008075": {
+      "document_id": 5830420599696008075,
+      "alt": "🇱🇧",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787197191290362945": {
+      "document_id": 5787197191290362945,
+      "alt": "🆕",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6014729749585206092": {
+      "document_id": 6014729749585206092,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5868279731387899243": {
+      "document_id": 5868279731387899243,
+      "alt": "📣",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5767252226456166660": {
+      "document_id": 5767252226456166660,
+      "alt": "🧨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5766959236672135550": {
+      "document_id": 5766959236672135550,
+      "alt": "🧨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5866078869886344315": {
+      "document_id": 5866078869886344315,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5775953830197862261": {
+      "document_id": 5775953830197862261,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5794013867029830691": {
+      "document_id": 5794013867029830691,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5792104354634800015": {
+      "document_id": 5792104354634800015,
+      "alt": "🔴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5809838880190372297": {
+      "document_id": 5809838880190372297,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5791804900924989133": {
+      "document_id": 5791804900924989133,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5816875299341607151": {
+      "document_id": 5816875299341607151,
+      "alt": "⭕️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5812158244134591852": {
+      "document_id": 5812158244134591852,
+      "alt": "🔴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5794160222335409671": {
+      "document_id": 5794160222335409671,
+      "alt": "⁉️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6021361114665720596": {
+      "document_id": 6021361114665720596,
+      "alt": "🌐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6014857993013697989": {
+      "document_id": 6014857993013697989,
+      "alt": "🌐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787386517743738669": {
+      "document_id": 5787386517743738669,
+      "alt": "🌐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787496181143707587": {
+      "document_id": 5787496181143707587,
+      "alt": "🌐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5830425779426562930": {
+      "document_id": 5830425779426562930,
+      "alt": "⭕️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787197418923629829": {
+      "document_id": 5787197418923629829,
+      "alt": "📚",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5940668918375914779": {
+      "document_id": 5940668918375914779,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5962919559093556862": {
+      "document_id": 5962919559093556862,
+      "alt": "🇮🇷",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5764943501145938954": {
+      "document_id": 5764943501145938954,
+      "alt": "❗️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787186733044998296": {
+      "document_id": 5787186733044998296,
+      "alt": "👩‍💻",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5819051039579446609": {
+      "document_id": 5819051039579446609,
+      "alt": "⭕️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5969618539844214631": {
+      "document_id": 5969618539844214631,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5972335738019126981": {
+      "document_id": 5972335738019126981,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5857136820990517597": {
+      "document_id": 5857136820990517597,
+      "alt": "❗️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5787468676173143368": {
+      "document_id": 5787468676173143368,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5807759922745579227": {
+      "document_id": 5807759922745579227,
+      "alt": "🟥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5810147653979215744": {
+      "document_id": 5810147653979215744,
+      "alt": "🟥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6003650675286743020": {
+      "document_id": 6003650675286743020,
+      "alt": "🚨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5816659996926025458": {
+      "document_id": 5816659996926025458,
+      "alt": "🌐",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298555228752971886": {
+      "document_id": 6298555228752971886,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298299463450494630": {
+      "document_id": 6298299463450494630,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298295868562867971": {
+      "document_id": 6298295868562867971,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6068642700230398272": {
+      "document_id": 6068642700230398272,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6043995377567276061": {
+      "document_id": 6043995377567276061,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6001374613202801239": {
+      "document_id": 6001374613202801239,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992544358010723793": {
+      "document_id": 5992544358010723793,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992176094629864265": {
+      "document_id": 5992176094629864265,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5989965565156925448": {
+      "document_id": 5989965565156925448,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5974447131056937137": {
+      "document_id": 5974447131056937137,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5962882454871086607": {
+      "document_id": 5962882454871086607,
+      "alt": "😂",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958752556053174359": {
+      "document_id": 5958752556053174359,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5949451958992508085": {
+      "document_id": 5949451958992508085,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5920095264818862706": {
+      "document_id": 5920095264818862706,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5886390581977947211": {
+      "document_id": 5886390581977947211,
+      "alt": "😂",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6123027087960843224": {
+      "document_id": 6123027087960843224,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6109228066708397581": {
+      "document_id": 6109228066708397581,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6107313812669473073": {
+      "document_id": 6107313812669473073,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6107008681012896385": {
+      "document_id": 6107008681012896385,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6075372316982774785": {
+      "document_id": 6075372316982774785,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5998824338931849590": {
+      "document_id": 5998824338931849590,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5990258507696315127": {
+      "document_id": 5990258507696315127,
+      "alt": "🔥",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5967446613537331933": {
+      "document_id": 5967446613537331933,
+      "alt": "🔥",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5958685305455254372": {
+      "document_id": 5958685305455254372,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958595106847070339": {
+      "document_id": 5958595106847070339,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958446556813203771": {
+      "document_id": 5958446556813203771,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5947092879485706105": {
+      "document_id": 5947092879485706105,
+      "alt": "🔥",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5943003589583574304": {
+      "document_id": 5943003589583574304,
+      "alt": "🔥",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5938264290740933445": {
+      "document_id": 5938264290740933445,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5919992254323234888": {
+      "document_id": 5919992254323234888,
+      "alt": "🔥",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6339314318068158066": {
+      "document_id": 6339314318068158066,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6339298916315434150": {
+      "document_id": 6339298916315434150,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6339239259219692717": {
+      "document_id": 6339239259219692717,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6339116470399668501": {
+      "document_id": 6339116470399668501,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6339079288867786477": {
+      "document_id": 6339079288867786477,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6338861087349281271": {
+      "document_id": 6338861087349281271,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6337086617315970875": {
+      "document_id": 6337086617315970875,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6336727678309108981": {
+      "document_id": 6336727678309108981,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6334833443112750266": {
+      "document_id": 6334833443112750266,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6334773760247205753": {
+      "document_id": 6334773760247205753,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6334624750651838450": {
+      "document_id": 6334624750651838450,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6334580087286926662": {
+      "document_id": 6334580087286926662,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6334446947595718556": {
+      "document_id": 6334446947595718556,
+      "alt": "❤️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298565175897229863": {
+      "document_id": 6298565175897229863,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298428643181856596": {
+      "document_id": 6298428643181856596,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298335558355651118": {
+      "document_id": 6298335558355651118,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6296099808834750711": {
+      "document_id": 6296099808834750711,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6278218507066805809": {
+      "document_id": 6278218507066805809,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6190524113925181540": {
+      "document_id": 6190524113925181540,
+      "alt": "😍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6190368782137954433": {
+      "document_id": 6190368782137954433,
+      "alt": "😍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6170476769955548750": {
+      "document_id": 6170476769955548750,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6091536005494478492": {
+      "document_id": 6091536005494478492,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5981049402028988676": {
+      "document_id": 5981049402028988676,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5947548313522806948": {
+      "document_id": 5947548313522806948,
+      "alt": "😍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947076391106256023": {
+      "document_id": 5947076391106256023,
+      "alt": "😍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5899957735125948688": {
+      "document_id": 5899957735125948688,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5850693390793973857": {
+      "document_id": 5850693390793973857,
+      "alt": "😍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5837144014515610188": {
+      "document_id": 5837144014515610188,
+      "alt": "😍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933681912823421887": {
+      "document_id": 5933681912823421887,
+      "alt": "🥰",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5922586251361262543": {
+      "document_id": 5922586251361262543,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5911117885522055968": {
+      "document_id": 5911117885522055968,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5805496277412094375": {
+      "document_id": 5805496277412094375,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5471987355298585260": {
+      "document_id": 5471987355298585260,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5470122759671526778": {
+      "document_id": 5470122759671526778,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5467628053687449379": {
+      "document_id": 5467628053687449379,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5453903511462894839": {
+      "document_id": 5453903511462894839,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5451640295626133757": {
+      "document_id": 5451640295626133757,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5445109256686685574": {
+      "document_id": 5445109256686685574,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5422679356918998266": {
+      "document_id": 5422679356918998266,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5422578403712704538": {
+      "document_id": 5422578403712704538,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5422349365991711125": {
+      "document_id": 5422349365991711125,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5420511343327321535": {
+      "document_id": 5420511343327321535,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5411605651329656317": {
+      "document_id": 5411605651329656317,
+      "alt": "🥰",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "6043949369877600869": {
+      "document_id": 6043949369877600869,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6042140995372456734": {
+      "document_id": 6042140995372456734,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6041675167514500122": {
+      "document_id": 6041675167514500122,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5999265900224584419": {
+      "document_id": 5999265900224584419,
+      "alt": "😘",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958395506831922299": {
+      "document_id": 5958395506831922299,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5900170112668802520": {
+      "document_id": 5900170112668802520,
+      "alt": "😘",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5886493725617560606": {
+      "document_id": 5886493725617560606,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5873101605271772269": {
+      "document_id": 5873101605271772269,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5837036343980466294": {
+      "document_id": 5837036343980466294,
+      "alt": "😘",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5474571821804168169": {
+      "document_id": 5474571821804168169,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5472349352322163425": {
+      "document_id": 5472349352322163425,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5469945141299002465": {
+      "document_id": 5469945141299002465,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5469856634907933589": {
+      "document_id": 5469856634907933589,
+      "alt": "😘",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5469697424765251404": {
+      "document_id": 5469697424765251404,
+      "alt": "😘",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6314319661399806487": {
+      "document_id": 6314319661399806487,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6271748826030150448": {
+      "document_id": 6271748826030150448,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6147552742790405148": {
+      "document_id": 6147552742790405148,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6039496463749223185": {
+      "document_id": 6039496463749223185,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5969596257553880299": {
+      "document_id": 5969596257553880299,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5962924201953203615": {
+      "document_id": 5962924201953203615,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5920264284666861769": {
+      "document_id": 5920264284666861769,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5899824436520950441": {
+      "document_id": 5899824436520950441,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5796462801547435383": {
+      "document_id": 5796462801547435383,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5784876225323341972": {
+      "document_id": 5784876225323341972,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5470013031847073035": {
+      "document_id": 5470013031847073035,
+      "alt": "😎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5458854552193233889": {
+      "document_id": 5458854552193233889,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458676482849142704": {
+      "document_id": 5458676482849142704,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5452142063770443235": {
+      "document_id": 5452142063770443235,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5442944060593556333": {
+      "document_id": 5442944060593556333,
+      "alt": "😎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6044389303377730298": {
+      "document_id": 6044389303377730298,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6044008949663931332": {
+      "document_id": 6044008949663931332,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5997047876033715275": {
+      "document_id": 5997047876033715275,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5987790915840778796": {
+      "document_id": 5987790915840778796,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5886238097754036854": {
+      "document_id": 5886238097754036854,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5821341554228338264": {
+      "document_id": 5821341554228338264,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5474552395667096481": {
+      "document_id": 5474552395667096481,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5474256846082549678": {
+      "document_id": 5474256846082549678,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5472137301196827101": {
+      "document_id": 5472137301196827101,
+      "alt": "😈",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5422433770689013946": {
+      "document_id": 5422433770689013946,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5420546136857387723": {
+      "document_id": 5420546136857387723,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5418054630623960702": {
+      "document_id": 5418054630623960702,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5415923905938365728": {
+      "document_id": 5415923905938365728,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5415876021347984755": {
+      "document_id": 5415876021347984755,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5398009910879337623": {
+      "document_id": 5398009910879337623,
+      "alt": "😈",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6298671811345254603": {
+      "document_id": 6298671811345254603,
+      "alt": "😭",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6226742168678042161": {
+      "document_id": 6226742168678042161,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226666216476379677": {
+      "document_id": 6226666216476379677,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226610012534344154": {
+      "document_id": 6226610012534344154,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226577284883548731": {
+      "document_id": 6226577284883548731,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226553434930153784": {
+      "document_id": 6226553434930153784,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226504798720494162": {
+      "document_id": 6226504798720494162,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226468154059524437": {
+      "document_id": 6226468154059524437,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226451072974588512": {
+      "document_id": 6226451072974588512,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226394190427720164": {
+      "document_id": 6226394190427720164,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226332205459705129": {
+      "document_id": 6226332205459705129,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226318371370043993": {
+      "document_id": 6226318371370043993,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226307517987687120": {
+      "document_id": 6226307517987687120,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226286691691268826": {
+      "document_id": 6226286691691268826,
+      "alt": "😭",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6298728453373953912": {
+      "document_id": 6298728453373953912,
+      "alt": "😡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6298675732650395252": {
+      "document_id": 6298675732650395252,
+      "alt": "😡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6044118213631938928": {
+      "document_id": 6044118213631938928,
+      "alt": "😡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5997007310067603782": {
+      "document_id": 5997007310067603782,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5949258127118440731": {
+      "document_id": 5949258127118440731,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947251187685269040": {
+      "document_id": 5947251187685269040,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947225924687633376": {
+      "document_id": 5947225924687633376,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5935918173445431390": {
+      "document_id": 5935918173445431390,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5848253325383836627": {
+      "document_id": 5848253325383836627,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5846114294231474705": {
+      "document_id": 5846114294231474705,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5846094618986293037": {
+      "document_id": 5846094618986293037,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5846049886901904048": {
+      "document_id": 5846049886901904048,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5846037684899815228": {
+      "document_id": 5846037684899815228,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5845991797469224255": {
+      "document_id": 5845991797469224255,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5845970580330783832": {
+      "document_id": 5845970580330783832,
+      "alt": "😡",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "6314250542491109860": {
+      "document_id": 6314250542491109860,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226507835262372496": {
+      "document_id": 6226507835262372496,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226254075709623458": {
+      "document_id": 6226254075709623458,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6147625684219993899": {
+      "document_id": 6147625684219993899,
+      "alt": "🤔",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6043960760130868895": {
+      "document_id": 6043960760130868895,
+      "alt": "🤔",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5988026829804414574": {
+      "document_id": 5988026829804414574,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5942718468179628637": {
+      "document_id": 5942718468179628637,
+      "alt": "🤔",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5922334854040529621": {
+      "document_id": 5922334854040529621,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5889010688122163763": {
+      "document_id": 5889010688122163763,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888936999368266979": {
+      "document_id": 5888936999368266979,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888914437905060596": {
+      "document_id": 5888914437905060596,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888899491418870468": {
+      "document_id": 5888899491418870468,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888881959362368406": {
+      "document_id": 5888881959362368406,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888810233408524498": {
+      "document_id": 5888810233408524498,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5888796803045790748": {
+      "document_id": 5888796803045790748,
+      "alt": "🤔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6307649242181668400": {
+      "document_id": 6307649242181668400,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6305374515832559780": {
+      "document_id": 6305374515832559780,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6282870708267650616": {
+      "document_id": 6282870708267650616,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6282796250714607379": {
+      "document_id": 6282796250714607379,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6282600709443555399": {
+      "document_id": 6282600709443555399,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6172366224853306987": {
+      "document_id": 6172366224853306987,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6163536012610899304": {
+      "document_id": 6163536012610899304,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6041720006973067267": {
+      "document_id": 6041720006973067267,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6021443547973030361": {
+      "document_id": 6021443547973030361,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6005849097246874660": {
+      "document_id": 6005849097246874660,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6005704008956648642": {
+      "document_id": 6005704008956648642,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5987575179633499723": {
+      "document_id": 5987575179633499723,
+      "alt": "👍",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5965357077588088002": {
+      "document_id": 5965357077588088002,
+      "alt": "👍",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5925026961016494440": {
+      "document_id": 5925026961016494440,
+      "alt": "👍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5924886880658135710": {
+      "document_id": 5924886880658135710,
+      "alt": "👍",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6041716699848249286": {
+      "document_id": 6041716699848249286,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6001544333130471005": {
+      "document_id": 6001544333130471005,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5994355172057288540": {
+      "document_id": 5994355172057288540,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5909107334021388924": {
+      "document_id": 5909107334021388924,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5852688776765117401": {
+      "document_id": 5852688776765117401,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5846174964939497063": {
+      "document_id": 5846174964939497063,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5830043325473758739": {
+      "document_id": 5830043325473758739,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5791716003691893036": {
+      "document_id": 5791716003691893036,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5474197343605641021": {
+      "document_id": 5474197343605641021,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5321213902762037603": {
+      "document_id": 5321213902762037603,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5271565017123152254": {
+      "document_id": 5271565017123152254,
+      "alt": "👎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5249161381080501028": {
+      "document_id": 5249161381080501028,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5249047800670348248": {
+      "document_id": 5249047800670348248,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5222478982653419101": {
+      "document_id": 5222478982653419101,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5222167125078057959": {
+      "document_id": 5222167125078057959,
+      "alt": "👎",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5911159851647505885": {
+      "document_id": 5911159851647505885,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5904646778556258113": {
+      "document_id": 5904646778556258113,
+      "alt": "🙏",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5857456954967856400": {
+      "document_id": 5857456954967856400,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5810089530186799934": {
+      "document_id": 5810089530186799934,
+      "alt": "🙏",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5458697734347318508": {
+      "document_id": 5458697734347318508,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5451829050848885419": {
+      "document_id": 5451829050848885419,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5440677279933965400": {
+      "document_id": 5440677279933965400,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5422411582887960168": {
+      "document_id": 5422411582887960168,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5390816214320687781": {
+      "document_id": 5390816214320687781,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5314269937076825018": {
+      "document_id": 5314269937076825018,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5303068327361406596": {
+      "document_id": 5303068327361406596,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5301189884759783672": {
+      "document_id": 5301189884759783672,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5296473353538780475": {
+      "document_id": 5296473353538780475,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5296336992622099699": {
+      "document_id": 5296336992622099699,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5271835789041366736": {
+      "document_id": 5271835789041366736,
+      "alt": "🙏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938074049459523495": {
+      "document_id": 5938074049459523495,
+      "alt": "💯",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5918060820415125361": {
+      "document_id": 5918060820415125361,
+      "alt": "💯",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5447450456244635791": {
+      "document_id": 5447450456244635791,
+      "alt": "💯",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5242402558550498992": {
+      "document_id": 5242402558550498992,
+      "alt": "💯",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5222241728659988366": {
+      "document_id": 5222241728659988366,
+      "alt": "💯",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5217938768429864291": {
+      "document_id": 5217938768429864291,
+      "alt": "💯",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "6269556155031228243": {
+      "document_id": 6269556155031228243,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6269419691035332217": {
+      "document_id": 6269419691035332217,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6219549292458150316": {
+      "document_id": 6219549292458150316,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6129805886383723340": {
+      "document_id": 6129805886383723340,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6129739490484294910": {
+      "document_id": 6129739490484294910,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6129584162992034014": {
+      "document_id": 6129584162992034014,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6021808310955545463": {
+      "document_id": 6021808310955545463,
+      "alt": "👑",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5994583887655736037": {
+      "document_id": 5994583887655736037,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992570952448222959": {
+      "document_id": 5992570952448222959,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992570737699855460": {
+      "document_id": 5992570737699855460,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992568714770259212": {
+      "document_id": 5992568714770259212,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992512532303060366": {
+      "document_id": 5992512532303060366,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992506021132639333": {
+      "document_id": 5992506021132639333,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5992498264421703311": {
+      "document_id": 5992498264421703311,
+      "alt": "👑",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6271537028307881531": {
+      "document_id": 6271537028307881531,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6113710066945236704": {
+      "document_id": 6113710066945236704,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6039859895291877126": {
+      "document_id": 6039859895291877126,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6037083366438737901": {
+      "document_id": 6037083366438737901,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6007983438294949171": {
+      "document_id": 6007983438294949171,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5940725397195853882": {
+      "document_id": 5940725397195853882,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933721757235025668": {
+      "document_id": 5933721757235025668,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933619429639199702": {
+      "document_id": 5933619429639199702,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933583485057899347": {
+      "document_id": 5933583485057899347,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933493810435726598": {
+      "document_id": 5933493810435726598,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5933493342284290296": {
+      "document_id": 5933493342284290296,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5931646068260346456": {
+      "document_id": 5931646068260346456,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5931377357926438940": {
+      "document_id": 5931377357926438940,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5927277137332544653": {
+      "document_id": 5927277137332544653,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5927164914132065367": {
+      "document_id": 5927164914132065367,
+      "alt": "💎",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5940660740758184142": {
+      "document_id": 5940660740758184142,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5938348905891632091": {
+      "document_id": 5938348905891632091,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5936130203095932344": {
+      "document_id": 5936130203095932344,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5890925363067886150": {
+      "document_id": 5890925363067886150,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5881928514684327853": {
+      "document_id": 5881928514684327853,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5852724394928905160": {
+      "document_id": 5852724394928905160,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5841646179623902202": {
+      "document_id": 5841646179623902202,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5839155747132284180": {
+      "document_id": 5839155747132284180,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5839070315937799229": {
+      "document_id": 5839070315937799229,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5838954364705712488": {
+      "document_id": 5838954364705712488,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5837150173498712334": {
+      "document_id": 5837150173498712334,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5837145049602728475": {
+      "document_id": 5837145049602728475,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5837100351878078870": {
+      "document_id": 5837100351878078870,
+      "alt": "✨",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5837009878391989076": {
+      "document_id": 5837009878391989076,
+      "alt": "✨",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6147565292684843119": {
+      "document_id": 6147565292684843119,
+      "alt": "⚡️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6082519348721751560": {
+      "document_id": 6082519348721751560,
+      "alt": "⚡️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5999084626834888043": {
+      "document_id": 5999084626834888043,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5983208078361761545": {
+      "document_id": 5983208078361761545,
+      "alt": "⚡️",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963228861163378440": {
+      "document_id": 5963228861163378440,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963204951080441677": {
+      "document_id": 5963204951080441677,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963151667716167341": {
+      "document_id": 5963151667716167341,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963129819217532412": {
+      "document_id": 5963129819217532412,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963089257546390129": {
+      "document_id": 5963089257546390129,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5963073726944646391": {
+      "document_id": 5963073726944646391,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5962970896837646120": {
+      "document_id": 5962970896837646120,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5962799304304237006": {
+      "document_id": 5962799304304237006,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5962781063578130250": {
+      "document_id": 5962781063578130250,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958806749950514631": {
+      "document_id": 5958806749950514631,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5958758637726864945": {
+      "document_id": 5958758637726864945,
+      "alt": "⚡",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6041731551845159060": {
+      "document_id": 6041731551845159060,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5983162259650647872": {
+      "document_id": 5983162259650647872,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5904388148510593830": {
+      "document_id": 5904388148510593830,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5900181983958407935": {
+      "document_id": 5900181983958407935,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5900174416226032467": {
+      "document_id": 5900174416226032467,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5900018788086063408": {
+      "document_id": 5900018788086063408,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5899991927360592270": {
+      "document_id": 5899991927360592270,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5899720665816112036": {
+      "document_id": 5899720665816112036,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5886397939256925831": {
+      "document_id": 5886397939256925831,
+      "alt": "🎉",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5854703700542497501": {
+      "document_id": 5854703700542497501,
+      "alt": "🎉",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5821174522950198138": {
+      "document_id": 5821174522950198138,
+      "alt": "🎉",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5260691199311759941": {
+      "document_id": 5260691199311759941,
+      "alt": "🎉",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5204087464540513335": {
+      "document_id": 5204087464540513335,
+      "alt": "🎉",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5990343805746814903": {
+      "document_id": 5990343805746814903,
+      "alt": "🤝",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5911271585221710692": {
+      "document_id": 5911271585221710692,
+      "alt": "🤝",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5875494829768578949": {
+      "document_id": 5875494829768578949,
+      "alt": "🤝",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5415942885398849948": {
+      "document_id": 5415942885398849948,
+      "alt": "🤝",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5413376509295476881": {
+      "document_id": 5413376509295476881,
+      "alt": "🤝",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5260725142438294253": {
+      "document_id": 5260725142438294253,
+      "alt": "🤝",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5260341966930982507": {
+      "document_id": 5260341966930982507,
+      "alt": "🤝",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5244956354694637935": {
+      "document_id": 5244956354694637935,
+      "alt": "🤝",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5242521142597543085": {
+      "document_id": 5242521142597543085,
+      "alt": "🤝",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6249216517062268463": {
+      "document_id": 6249216517062268463,
+      "alt": "💔",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5971992406923416087": {
+      "document_id": 5971992406923416087,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5969645331850204239": {
+      "document_id": 5969645331850204239,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5969599882506277814": {
+      "document_id": 5969599882506277814,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5949344644939651251": {
+      "document_id": 5949344644939651251,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5791649556252856974": {
+      "document_id": 5791649556252856974,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5449737109717935647": {
+      "document_id": 5449737109717935647,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5379676997595199882": {
+      "document_id": 5379676997595199882,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5341463608410795479": {
+      "document_id": 5341463608410795479,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5341316806428615547": {
+      "document_id": 5341316806428615547,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5339430658655680443": {
+      "document_id": 5339430658655680443,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5339289994181768601": {
+      "document_id": 5339289994181768601,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5318805319462184087": {
+      "document_id": 5318805319462184087,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5307826657204131647": {
+      "document_id": 5307826657204131647,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5305301074700166594": {
+      "document_id": 5305301074700166594,
+      "alt": "💔",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6147700446715715515": {
+      "document_id": 6147700446715715515,
+      "alt": "😀",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6043996047582170909": {
+      "document_id": 6043996047582170909,
+      "alt": "😀",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6042015122765913625": {
+      "document_id": 6042015122765913625,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947113628472712519": {
+      "document_id": 5947113628472712519,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5938558461640973140": {
+      "document_id": 5938558461640973140,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938513725261618954": {
+      "document_id": 5938513725261618954,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938461253646163366": {
+      "document_id": 5938461253646163366,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938425098611465347": {
+      "document_id": 5938425098611465347,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938383712306601617": {
+      "document_id": 5938383712306601617,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938318617782262675": {
+      "document_id": 5938318617782262675,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938263577776366188": {
+      "document_id": 5938263577776366188,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938238387793173385": {
+      "document_id": 5938238387793173385,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938235862352404015": {
+      "document_id": 5938235862352404015,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938173976168634974": {
+      "document_id": 5938173976168634974,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5938165094176267742": {
+      "document_id": 5938165094176267742,
+      "alt": "😀",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6044385416432327843": {
+      "document_id": 6044385416432327843,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6044091902662286454": {
+      "document_id": 6044091902662286454,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5922608666795580060": {
+      "document_id": 5922608666795580060,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5886235632442808894": {
+      "document_id": 5886235632442808894,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5809801913406855577": {
+      "document_id": 5809801913406855577,
+      "alt": "🤣",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5798661850572789694": {
+      "document_id": 5798661850572789694,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458836358711766616": {
+      "document_id": 5458836358711766616,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458814870990387249": {
+      "document_id": 5458814870990387249,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458537214239603055": {
+      "document_id": 5458537214239603055,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458528916362786888": {
+      "document_id": 5458528916362786888,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458440268237793750": {
+      "document_id": 5458440268237793750,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5458393470274140143": {
+      "document_id": 5458393470274140143,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5440859635655418170": {
+      "document_id": 5440859635655418170,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5438539103480090887": {
+      "document_id": 5438539103480090887,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5438527111931403259": {
+      "document_id": 5438527111931403259,
+      "alt": "🤣",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6296341890371422476": {
+      "document_id": 6296341890371422476,
+      "alt": "😢",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6226785337394334489": {
+      "document_id": 6226785337394334489,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226779487648877057": {
+      "document_id": 6226779487648877057,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226743375563852013": {
+      "document_id": 6226743375563852013,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226664571503905660": {
+      "document_id": 6226664571503905660,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226580518993922857": {
+      "document_id": 6226580518993922857,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226565027046885506": {
+      "document_id": 6226565027046885506,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226428167913999296": {
+      "document_id": 6226428167913999296,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226349565717515072": {
+      "document_id": 6226349565717515072,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226317817319263685": {
+      "document_id": 6226317817319263685,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226312796502494613": {
+      "document_id": 6226312796502494613,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226289367455894411": {
+      "document_id": 6226289367455894411,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6226246237394307392": {
+      "document_id": 6226246237394307392,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6224441736949664500": {
+      "document_id": 6224441736949664500,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6224390218816949324": {
+      "document_id": 6224390218816949324,
+      "alt": "😢",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6298426688971736948": {
+      "document_id": 6298426688971736948,
+      "alt": "😱",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5996735425752865697": {
+      "document_id": 5996735425752865697,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5913327783634800999": {
+      "document_id": 5913327783634800999,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5442955296228002417": {
+      "document_id": 5442955296228002417,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5433749824103012400": {
+      "document_id": 5433749824103012400,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5431553614051048820": {
+      "document_id": 5431553614051048820,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5431434093701125590": {
+      "document_id": 5431434093701125590,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5425103423575957143": {
+      "document_id": 5425103423575957143,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5393118673273654121": {
+      "document_id": 5393118673273654121,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5386783729656033156": {
+      "document_id": 5386783729656033156,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5386367276742112950": {
+      "document_id": 5386367276742112950,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5384558086193165237": {
+      "document_id": 5384558086193165237,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5375476231816900477": {
+      "document_id": 5375476231816900477,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5370810157871667232": {
+      "document_id": 5370810157871667232,
+      "alt": "😱",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5368822769129647763": {
+      "document_id": 5368822769129647763,
+      "alt": "😱",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6298513503145691368": {
+      "document_id": 6298513503145691368,
+      "alt": "😴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6296465761523206072": {
+      "document_id": 6296465761523206072,
+      "alt": "😴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "6026084328855838385": {
+      "document_id": 6026084328855838385,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5994573433705336715": {
+      "document_id": 5994573433705336715,
+      "alt": "😴",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5987677485754490057": {
+      "document_id": 5987677485754490057,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947248649359595843": {
+      "document_id": 5947248649359595843,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5922626194557115284": {
+      "document_id": 5922626194557115284,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5911063378092102840": {
+      "document_id": 5911063378092102840,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5467912101349566212": {
+      "document_id": 5467912101349566212,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5422800947443149454": {
+      "document_id": 5422800947443149454,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5422787882152632354": {
+      "document_id": 5422787882152632354,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5422518802451538796": {
+      "document_id": 5422518802451538796,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5368597008468690470": {
+      "document_id": 5368597008468690470,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5368579643915910293": {
+      "document_id": 5368579643915910293,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5345862750138567180": {
+      "document_id": 5345862750138567180,
+      "alt": "😴",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5996563287758610826": {
+      "document_id": 5996563287758610826,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947214319685999863": {
+      "document_id": 5947214319685999863,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5947097969021950471": {
+      "document_id": 5947097969021950471,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5913669375268754237": {
+      "document_id": 5913669375268754237,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5854968137383941226": {
+      "document_id": 5854968137383941226,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5848481448276795221": {
+      "document_id": 5848481448276795221,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5848021156631682790": {
+      "document_id": 5848021156631682790,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5472235707487511882": {
+      "document_id": 5472235707487511882,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5472112038199190321": {
+      "document_id": 5472112038199190321,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5471965631354008071": {
+      "document_id": 5471965631354008071,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5470088292559005408": {
+      "document_id": 5470088292559005408,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5469804910616811175": {
+      "document_id": 5469804910616811175,
+      "alt": "😏",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5467611256070351014": {
+      "document_id": 5467611256070351014,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5465275906257855623": {
+      "document_id": 5465275906257855623,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5458822833859751176": {
+      "document_id": 5458822833859751176,
+      "alt": "😏",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "6048379293635975213": {
+      "document_id": 6048379293635975213,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "6044293242139189065": {
+      "document_id": 6044293242139189065,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5987915882209222957": {
+      "document_id": 5987915882209222957,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5961042782939255288": {
+      "document_id": 5961042782939255288,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5839380446936309646": {
+      "document_id": 5839380446936309646,
+      "alt": "🤬",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5839346400730550638": {
+      "document_id": 5839346400730550638,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5814685673474494505": {
+      "document_id": 5814685673474494505,
+      "alt": "🤬",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5472404912019105421": {
+      "document_id": 5472404912019105421,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5469937994473418673": {
+      "document_id": 5469937994473418673,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5469778719906232145": {
+      "document_id": 5469778719906232145,
+      "alt": "🤬",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5415973444091158422": {
+      "document_id": 5415973444091158422,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5391265794317364520": {
+      "document_id": 5391265794317364520,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5388709983833581240": {
+      "document_id": 5388709983833581240,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5379978959565906947": {
+      "document_id": 5379978959565906947,
+      "alt": "🤬",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5373123633415723713": {
+      "document_id": 5373123633415723713,
+      "alt": "🤬",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5942724489723777520": {
+      "document_id": 5942724489723777520,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5940479892570249335": {
+      "document_id": 5940479892570249335,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5931556131645168384": {
+      "document_id": 5931556131645168384,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5904709686942242759": {
+      "document_id": 5904709686942242759,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5830453039583994002": {
+      "document_id": 5830453039583994002,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5828158513435650496": {
+      "document_id": 5828158513435650496,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5828104126264778477": {
+      "document_id": 5828104126264778477,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5474549655477954809": {
+      "document_id": 5474549655477954809,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5413766273282627980": {
+      "document_id": 5413766273282627980,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "image/webp"
+    },
+    "5335009887472612179": {
+      "document_id": 5335009887472612179,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5321393866186710964": {
+      "document_id": 5321393866186710964,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5269464524712336905": {
+      "document_id": 5269464524712336905,
+      "alt": "💪",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    },
+    "5260734861949287275": {
+      "document_id": 5260734861949287275,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5260567452714024199": {
+      "document_id": 5260567452714024199,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5260314045348590877": {
+      "document_id": 5260314045348590877,
+      "alt": "💪",
+      "free": false,
+      "animated": false,
+      "media_type": "video/webm"
+    },
+    "5938388342281343001": {
+      "document_id": 5938388342281343001,
+      "alt": "🙄",
+      "free": false,
+      "animated": true,
+      "media_type": "application/x-tgsticker"
+    }
+  },
+  "target_status": {
+    "😂": {
+      "status": "active",
+      "ids": [
+        5886390581977947211,
+        5920095264818862706,
+        5949451958992508085,
+        5958752556053174359,
+        5962882454871086607,
+        5974447131056937137,
+        5989965565156925448,
+        5992176094629864265,
+        5992544358010723793,
+        6001374613202801239,
+        6043995377567276061,
+        6068642700230398272,
+        6298295868562867971,
+        6298299463450494630,
+        6298555228752971886
+      ]
+    },
+    "🔥": {
+      "status": "active",
+      "ids": [
+        5919992254323234888,
+        5938264290740933445,
+        5943003589583574304,
+        5947092879485706105,
+        5958446556813203771,
+        5958595106847070339,
+        5958685305455254372,
+        5967446613537331933,
+        5990258507696315127,
+        5998824338931849590,
+        6075372316982774785,
+        6107008681012896385,
+        6107313812669473073,
+        6109228066708397581,
+        6123027087960843224
+      ]
+    },
+    "❤️": {
+      "status": "active",
+      "ids": [
+        6028138319655736001,
+        6028444945960932052,
+        6334446947595718556,
+        6334580087286926662,
+        6334624750651838450,
+        6334773760247205753,
+        6334833443112750266,
+        6336727678309108981,
+        6337086617315970875,
+        6338861087349281271,
+        6339079288867786477,
+        6339116470399668501,
+        6339239259219692717,
+        6339298916315434150,
+        6339314318068158066
+      ]
+    },
+    "😍": {
+      "status": "active",
+      "ids": [
+        5837144014515610188,
+        5850693390793973857,
+        5899957735125948688,
+        5947076391106256023,
+        5947548313522806948,
+        5981049402028988676,
+        6091536005494478492,
+        6170476769955548750,
+        6190368782137954433,
+        6190524113925181540,
+        6278218507066805809,
+        6296099808834750711,
+        6298335558355651118,
+        6298428643181856596,
+        6298565175897229863
+      ]
+    },
+    "🥰": {
+      "status": "active",
+      "ids": [
+        5411605651329656317,
+        5420511343327321535,
+        5422349365991711125,
+        5422578403712704538,
+        5422679356918998266,
+        5445109256686685574,
+        5451640295626133757,
+        5453903511462894839,
+        5467628053687449379,
+        5470122759671526778,
+        5471987355298585260,
+        5805496277412094375,
+        5911117885522055968,
+        5922586251361262543,
+        5933681912823421887
+      ]
+    },
+    "😘": {
+      "status": "active",
+      "ids": [
+        5469697424765251404,
+        5469856634907933589,
+        5469945141299002465,
+        5472349352322163425,
+        5474571821804168169,
+        5837036343980466294,
+        5873101605271772269,
+        5886493725617560606,
+        5900170112668802520,
+        5958395506831922299,
+        5999265900224584419,
+        6030599524894905379,
+        6041675167514500122,
+        6042140995372456734,
+        6043949369877600869
+      ]
+    },
+    "😎": {
+      "status": "active",
+      "ids": [
+        5442944060593556333,
+        5452142063770443235,
+        5458676482849142704,
+        5458854552193233889,
+        5470013031847073035,
+        5784876225323341972,
+        5796462801547435383,
+        5899824436520950441,
+        5920264284666861769,
+        5962924201953203615,
+        5969596257553880299,
+        6039496463749223185,
+        6147552742790405148,
+        6271748826030150448,
+        6314319661399806487
+      ]
+    },
+    "😈": {
+      "status": "active",
+      "ids": [
+        5398009910879337623,
+        5415876021347984755,
+        5415923905938365728,
+        5418054630623960702,
+        5420546136857387723,
+        5422433770689013946,
+        5472137301196827101,
+        5474256846082549678,
+        5474552395667096481,
+        5821341554228338264,
+        5886238097754036854,
+        5987790915840778796,
+        5997047876033715275,
+        6044008949663931332,
+        6044389303377730298
+      ]
+    },
+    "😭": {
+      "status": "active",
+      "ids": [
+        6028293496824141193,
+        6226286691691268826,
+        6226307517987687120,
+        6226318371370043993,
+        6226332205459705129,
+        6226394190427720164,
+        6226451072974588512,
+        6226468154059524437,
+        6226504798720494162,
+        6226553434930153784,
+        6226577284883548731,
+        6226610012534344154,
+        6226666216476379677,
+        6226742168678042161,
+        6298671811345254603
+      ]
+    },
+    "😡": {
+      "status": "active",
+      "ids": [
+        5845970580330783832,
+        5845991797469224255,
+        5846037684899815228,
+        5846049886901904048,
+        5846094618986293037,
+        5846114294231474705,
+        5848253325383836627,
+        5935918173445431390,
+        5947225924687633376,
+        5947251187685269040,
+        5949258127118440731,
+        5997007310067603782,
+        6044118213631938928,
+        6298675732650395252,
+        6298728453373953912
+      ]
+    },
+    "🤔": {
+      "status": "active",
+      "ids": [
+        5888796803045790748,
+        5888810233408524498,
+        5888881959362368406,
+        5888899491418870468,
+        5888914437905060596,
+        5888936999368266979,
+        5889010688122163763,
+        5922334854040529621,
+        5942718468179628637,
+        5988026829804414574,
+        6043960760130868895,
+        6147625684219993899,
+        6226254075709623458,
+        6226507835262372496,
+        6314250542491109860
+      ]
+    },
+    "👍": {
+      "status": "active",
+      "ids": [
+        5924886880658135710,
+        5925026961016494440,
+        5965357077588088002,
+        5987575179633499723,
+        6005704008956648642,
+        6005849097246874660,
+        6021443547973030361,
+        6041720006973067267,
+        6163536012610899304,
+        6172366224853306987,
+        6282600709443555399,
+        6282796250714607379,
+        6282870708267650616,
+        6305374515832559780,
+        6307649242181668400
+      ]
+    },
+    "👎": {
+      "status": "active",
+      "ids": [
+        5222167125078057959,
+        5222478982653419101,
+        5249047800670348248,
+        5249161381080501028,
+        5271565017123152254,
+        5321213902762037603,
+        5474197343605641021,
+        5791716003691893036,
+        5830043325473758739,
+        5846174964939497063,
+        5852688776765117401,
+        5909107334021388924,
+        5994355172057288540,
+        6001544333130471005,
+        6041716699848249286
+      ]
+    },
+    "🙏": {
+      "status": "active",
+      "ids": [
+        5271835789041366736,
+        5296336992622099699,
+        5296473353538780475,
+        5301189884759783672,
+        5303068327361406596,
+        5314269937076825018,
+        5390816214320687781,
+        5422411582887960168,
+        5440677279933965400,
+        5451829050848885419,
+        5458697734347318508,
+        5810089530186799934,
+        5857456954967856400,
+        5904646778556258113,
+        5911159851647505885
+      ]
+    },
+    "💯": {
+      "status": "active",
+      "ids": [
+        5217938768429864291,
+        5222241728659988366,
+        5242402558550498992,
+        5447450456244635791,
+        5918060820415125361,
+        5938074049459523495
+      ]
+    },
+    "👑": {
+      "status": "active",
+      "ids": [
+        5992498264421703311,
+        5992506021132639333,
+        5992512532303060366,
+        5992568714770259212,
+        5992570737699855460,
+        5992570952448222959,
+        5994583887655736037,
+        6014729749585206092,
+        6021808310955545463,
+        6129584162992034014,
+        6129739490484294910,
+        6129805886383723340,
+        6219549292458150316,
+        6269419691035332217,
+        6269556155031228243
+      ]
+    },
+    "💎": {
+      "status": "active",
+      "ids": [
+        5927164914132065367,
+        5927277137332544653,
+        5931377357926438940,
+        5931646068260346456,
+        5933493342284290296,
+        5933493810435726598,
+        5933583485057899347,
+        5933619429639199702,
+        5933721757235025668,
+        5940725397195853882,
+        6007983438294949171,
+        6037083366438737901,
+        6039859895291877126,
+        6113710066945236704,
+        6271537028307881531
+      ]
+    },
+    "🚀": {
+      "status": "inactive",
+      "ids": []
+    },
+    "✨": {
+      "status": "active",
+      "ids": [
+        5837009878391989076,
+        5837100351878078870,
+        5837145049602728475,
+        5837150173498712334,
+        5838954364705712488,
+        5839070315937799229,
+        5839155747132284180,
+        5841646179623902202,
+        5852724394928905160,
+        5881928514684327853,
+        5890925363067886150,
+        5936130203095932344,
+        5938348905891632091,
+        5940660740758184142,
+        6028070583726510691
+      ]
+    },
+    "⚡": {
+      "status": "active",
+      "ids": [
+        5958758637726864945,
+        5958806749950514631,
+        5962781063578130250,
+        5962799304304237006,
+        5962970896837646120,
+        5963073726944646391,
+        5963089257546390129,
+        5963129819217532412,
+        5963151667716167341,
+        5963204951080441677,
+        5963228861163378440,
+        5983208078361761545,
+        5999084626834888043,
+        6082519348721751560,
+        6147565292684843119
+      ]
+    },
+    "🎉": {
+      "status": "active",
+      "ids": [
+        5204087464540513335,
+        5260691199311759941,
+        5821174522950198138,
+        5854703700542497501,
+        5886397939256925831,
+        5899720665816112036,
+        5899991927360592270,
+        5900018788086063408,
+        5900174416226032467,
+        5900181983958407935,
+        5904388148510593830,
+        5983162259650647872,
+        6041731551845159060
+      ]
+    },
+    "🤝": {
+      "status": "active",
+      "ids": [
+        5242521142597543085,
+        5244956354694637935,
+        5260341966930982507,
+        5260725142438294253,
+        5413376509295476881,
+        5415942885398849948,
+        5875494829768578949,
+        5911271585221710692,
+        5990343805746814903
+      ]
+    },
+    "💔": {
+      "status": "active",
+      "ids": [
+        5305301074700166594,
+        5307826657204131647,
+        5318805319462184087,
+        5339289994181768601,
+        5339430658655680443,
+        5341316806428615547,
+        5341463608410795479,
+        5379676997595199882,
+        5449737109717935647,
+        5791649556252856974,
+        5949344644939651251,
+        5969599882506277814,
+        5969645331850204239,
+        5971992406923416087,
+        6249216517062268463
+      ]
+    },
+    "😀": {
+      "status": "active",
+      "ids": [
+        5938165094176267742,
+        5938173976168634974,
+        5938235862352404015,
+        5938238387793173385,
+        5938263577776366188,
+        5938318617782262675,
+        5938383712306601617,
+        5938425098611465347,
+        5938461253646163366,
+        5938513725261618954,
+        5938558461640973140,
+        5947113628472712519,
+        6042015122765913625,
+        6043996047582170909,
+        6147700446715715515
+      ]
+    },
+    "🤣": {
+      "status": "active",
+      "ids": [
+        5438527111931403259,
+        5438539103480090887,
+        5440859635655418170,
+        5458393470274140143,
+        5458440268237793750,
+        5458528916362786888,
+        5458537214239603055,
+        5458814870990387249,
+        5458836358711766616,
+        5798661850572789694,
+        5809801913406855577,
+        5886235632442808894,
+        5922608666795580060,
+        6044091902662286454,
+        6044385416432327843
+      ]
+    },
+    "😢": {
+      "status": "active",
+      "ids": [
+        6224390218816949324,
+        6224441736949664500,
+        6226246237394307392,
+        6226289367455894411,
+        6226312796502494613,
+        6226317817319263685,
+        6226349565717515072,
+        6226428167913999296,
+        6226565027046885506,
+        6226580518993922857,
+        6226664571503905660,
+        6226743375563852013,
+        6226779487648877057,
+        6226785337394334489,
+        6296341890371422476
+      ]
+    },
+    "😱": {
+      "status": "active",
+      "ids": [
+        5368822769129647763,
+        5370810157871667232,
+        5375476231816900477,
+        5384558086193165237,
+        5386367276742112950,
+        5386783729656033156,
+        5393118673273654121,
+        5425103423575957143,
+        5431434093701125590,
+        5431553614051048820,
+        5433749824103012400,
+        5442955296228002417,
+        5913327783634800999,
+        5996735425752865697,
+        6298426688971736948
+      ]
+    },
+    "😴": {
+      "status": "active",
+      "ids": [
+        5345862750138567180,
+        5368579643915910293,
+        5368597008468690470,
+        5422518802451538796,
+        5422787882152632354,
+        5422800947443149454,
+        5467912101349566212,
+        5911063378092102840,
+        5922626194557115284,
+        5947248649359595843,
+        5987677485754490057,
+        5994573433705336715,
+        6026084328855838385,
+        6296465761523206072,
+        6298513503145691368
+      ]
+    },
+    "😏": {
+      "status": "active",
+      "ids": [
+        5458822833859751176,
+        5465275906257855623,
+        5467611256070351014,
+        5469804910616811175,
+        5470088292559005408,
+        5471965631354008071,
+        5472112038199190321,
+        5472235707487511882,
+        5848021156631682790,
+        5848481448276795221,
+        5854968137383941226,
+        5913669375268754237,
+        5947097969021950471,
+        5947214319685999863,
+        5996563287758610826
+      ]
+    },
+    "🤬": {
+      "status": "active",
+      "ids": [
+        5373123633415723713,
+        5379978959565906947,
+        5388709983833581240,
+        5391265794317364520,
+        5415973444091158422,
+        5469778719906232145,
+        5469937994473418673,
+        5472404912019105421,
+        5814685673474494505,
+        5839346400730550638,
+        5839380446936309646,
+        5961042782939255288,
+        5987915882209222957,
+        6044293242139189065,
+        6048379293635975213
+      ]
+    },
+    "💪": {
+      "status": "active",
+      "ids": [
+        5260314045348590877,
+        5260567452714024199,
+        5260734861949287275,
+        5269464524712336905,
+        5321393866186710964,
+        5335009887472612179,
+        5413766273282627980,
+        5474549655477954809,
+        5828104126264778477,
+        5828158513435650496,
+        5830453039583994002,
+        5904709686942242759,
+        5931556131645168384,
+        5940479892570249335,
+        5942724489723777520
+      ]
+    }
+  },
+  "validated_map": {
+    "⚡": [
+      5958758637726864945,
+      5958806749950514631,
+      5962781063578130250,
+      5962799304304237006,
+      5962970896837646120,
+      5963073726944646391,
+      5963089257546390129,
+      5963129819217532412,
+      5963151667716167341,
+      5963204951080441677,
+      5963228861163378440,
+      5983208078361761545,
+      5999084626834888043,
+      6082519348721751560,
+      6147565292684843119
+    ],
+    "✨": [
+      5837009878391989076,
+      5837100351878078870,
+      5837145049602728475,
+      5837150173498712334,
+      5838954364705712488,
+      5839070315937799229,
+      5839155747132284180,
+      5841646179623902202,
+      5852724394928905160,
+      5881928514684327853,
+      5890925363067886150,
+      5936130203095932344,
+      5938348905891632091,
+      5940660740758184142,
+      6028070583726510691
+    ],
+    "❤️": [
+      6028138319655736001,
+      6028444945960932052,
+      6334446947595718556,
+      6334580087286926662,
+      6334624750651838450,
+      6334773760247205753,
+      6334833443112750266,
+      6336727678309108981,
+      6337086617315970875,
+      6338861087349281271,
+      6339079288867786477,
+      6339116470399668501,
+      6339239259219692717,
+      6339298916315434150,
+      6339314318068158066
+    ],
+    "🎉": [
+      5204087464540513335,
+      5260691199311759941,
+      5821174522950198138,
+      5854703700542497501,
+      5886397939256925831,
+      5899720665816112036,
+      5899991927360592270,
+      5900018788086063408,
+      5900174416226032467,
+      5900181983958407935,
+      5904388148510593830,
+      5983162259650647872,
+      6041731551845159060
+    ],
+    "👍": [
+      5924886880658135710,
+      5925026961016494440,
+      5965357077588088002,
+      5987575179633499723,
+      6005704008956648642,
+      6005849097246874660,
+      6021443547973030361,
+      6041720006973067267,
+      6163536012610899304,
+      6172366224853306987,
+      6282600709443555399,
+      6282796250714607379,
+      6282870708267650616,
+      6305374515832559780,
+      6307649242181668400
+    ],
+    "👎": [
+      5222167125078057959,
+      5222478982653419101,
+      5249047800670348248,
+      5249161381080501028,
+      5271565017123152254,
+      5321213902762037603,
+      5474197343605641021,
+      5791716003691893036,
+      5830043325473758739,
+      5846174964939497063,
+      5852688776765117401,
+      5909107334021388924,
+      5994355172057288540,
+      6001544333130471005,
+      6041716699848249286
+    ],
+    "👑": [
+      5992498264421703311,
+      5992506021132639333,
+      5992512532303060366,
+      5992568714770259212,
+      5992570737699855460,
+      5992570952448222959,
+      5994583887655736037,
+      6014729749585206092,
+      6021808310955545463,
+      6129584162992034014,
+      6129739490484294910,
+      6129805886383723340,
+      6219549292458150316,
+      6269419691035332217,
+      6269556155031228243
+    ],
+    "💎": [
+      5927164914132065367,
+      5927277137332544653,
+      5931377357926438940,
+      5931646068260346456,
+      5933493342284290296,
+      5933493810435726598,
+      5933583485057899347,
+      5933619429639199702,
+      5933721757235025668,
+      5940725397195853882,
+      6007983438294949171,
+      6037083366438737901,
+      6039859895291877126,
+      6113710066945236704,
+      6271537028307881531
+    ],
+    "💔": [
+      5305301074700166594,
+      5307826657204131647,
+      5318805319462184087,
+      5339289994181768601,
+      5339430658655680443,
+      5341316806428615547,
+      5341463608410795479,
+      5379676997595199882,
+      5449737109717935647,
+      5791649556252856974,
+      5949344644939651251,
+      5969599882506277814,
+      5969645331850204239,
+      5971992406923416087,
+      6249216517062268463
+    ],
+    "💪": [
+      5260314045348590877,
+      5260567452714024199,
+      5260734861949287275,
+      5269464524712336905,
+      5321393866186710964,
+      5335009887472612179,
+      5413766273282627980,
+      5474549655477954809,
+      5828104126264778477,
+      5828158513435650496,
+      5830453039583994002,
+      5904709686942242759,
+      5931556131645168384,
+      5940479892570249335,
+      5942724489723777520
+    ],
+    "💯": [
+      5217938768429864291,
+      5222241728659988366,
+      5242402558550498992,
+      5447450456244635791,
+      5918060820415125361,
+      5938074049459523495
+    ],
+    "🔥": [
+      5919992254323234888,
+      5938264290740933445,
+      5943003589583574304,
+      5947092879485706105,
+      5958446556813203771,
+      5958595106847070339,
+      5958685305455254372,
+      5967446613537331933,
+      5990258507696315127,
+      5998824338931849590,
+      6075372316982774785,
+      6107008681012896385,
+      6107313812669473073,
+      6109228066708397581,
+      6123027087960843224
+    ],
+    "😀": [
+      5938165094176267742,
+      5938173976168634974,
+      5938235862352404015,
+      5938238387793173385,
+      5938263577776366188,
+      5938318617782262675,
+      5938383712306601617,
+      5938425098611465347,
+      5938461253646163366,
+      5938513725261618954,
+      5938558461640973140,
+      5947113628472712519,
+      6042015122765913625,
+      6043996047582170909,
+      6147700446715715515
+    ],
+    "😂": [
+      5886390581977947211,
+      5920095264818862706,
+      5949451958992508085,
+      5958752556053174359,
+      5962882454871086607,
+      5974447131056937137,
+      5989965565156925448,
+      5992176094629864265,
+      5992544358010723793,
+      6001374613202801239,
+      6043995377567276061,
+      6068642700230398272,
+      6298295868562867971,
+      6298299463450494630,
+      6298555228752971886
+    ],
+    "😈": [
+      5398009910879337623,
+      5415876021347984755,
+      5415923905938365728,
+      5418054630623960702,
+      5420546136857387723,
+      5422433770689013946,
+      5472137301196827101,
+      5474256846082549678,
+      5474552395667096481,
+      5821341554228338264,
+      5886238097754036854,
+      5987790915840778796,
+      5997047876033715275,
+      6044008949663931332,
+      6044389303377730298
+    ],
+    "😍": [
+      5837144014515610188,
+      5850693390793973857,
+      5899957735125948688,
+      5947076391106256023,
+      5947548313522806948,
+      5981049402028988676,
+      6091536005494478492,
+      6170476769955548750,
+      6190368782137954433,
+      6190524113925181540,
+      6278218507066805809,
+      6296099808834750711,
+      6298335558355651118,
+      6298428643181856596,
+      6298565175897229863
+    ],
+    "😎": [
+      5442944060593556333,
+      5452142063770443235,
+      5458676482849142704,
+      5458854552193233889,
+      5470013031847073035,
+      5784876225323341972,
+      5796462801547435383,
+      5899824436520950441,
+      5920264284666861769,
+      5962924201953203615,
+      5969596257553880299,
+      6039496463749223185,
+      6147552742790405148,
+      6271748826030150448,
+      6314319661399806487
+    ],
+    "😏": [
+      5458822833859751176,
+      5465275906257855623,
+      5467611256070351014,
+      5469804910616811175,
+      5470088292559005408,
+      5471965631354008071,
+      5472112038199190321,
+      5472235707487511882,
+      5848021156631682790,
+      5848481448276795221,
+      5854968137383941226,
+      5913669375268754237,
+      5947097969021950471,
+      5947214319685999863,
+      5996563287758610826
+    ],
+    "😘": [
+      5469697424765251404,
+      5469856634907933589,
+      5469945141299002465,
+      5472349352322163425,
+      5474571821804168169,
+      5837036343980466294,
+      5873101605271772269,
+      5886493725617560606,
+      5900170112668802520,
+      5958395506831922299,
+      5999265900224584419,
+      6030599524894905379,
+      6041675167514500122,
+      6042140995372456734,
+      6043949369877600869
+    ],
+    "😡": [
+      5845970580330783832,
+      5845991797469224255,
+      5846037684899815228,
+      5846049886901904048,
+      5846094618986293037,
+      5846114294231474705,
+      5848253325383836627,
+      5935918173445431390,
+      5947225924687633376,
+      5947251187685269040,
+      5949258127118440731,
+      5997007310067603782,
+      6044118213631938928,
+      6298675732650395252,
+      6298728453373953912
+    ],
+    "😢": [
+      6224390218816949324,
+      6224441736949664500,
+      6226246237394307392,
+      6226289367455894411,
+      6226312796502494613,
+      6226317817319263685,
+      6226349565717515072,
+      6226428167913999296,
+      6226565027046885506,
+      6226580518993922857,
+      6226664571503905660,
+      6226743375563852013,
+      6226779487648877057,
+      6226785337394334489,
+      6296341890371422476
+    ],
+    "😭": [
+      6028293496824141193,
+      6226286691691268826,
+      6226307517987687120,
+      6226318371370043993,
+      6226332205459705129,
+      6226394190427720164,
+      6226451072974588512,
+      6226468154059524437,
+      6226504798720494162,
+      6226553434930153784,
+      6226577284883548731,
+      6226610012534344154,
+      6226666216476379677,
+      6226742168678042161,
+      6298671811345254603
+    ],
+    "😱": [
+      5368822769129647763,
+      5370810157871667232,
+      5375476231816900477,
+      5384558086193165237,
+      5386367276742112950,
+      5386783729656033156,
+      5393118673273654121,
+      5425103423575957143,
+      5431434093701125590,
+      5431553614051048820,
+      5433749824103012400,
+      5442955296228002417,
+      5913327783634800999,
+      5996735425752865697,
+      6298426688971736948
+    ],
+    "😴": [
+      5345862750138567180,
+      5368579643915910293,
+      5368597008468690470,
+      5422518802451538796,
+      5422787882152632354,
+      5422800947443149454,
+      5467912101349566212,
+      5911063378092102840,
+      5922626194557115284,
+      5947248649359595843,
+      5987677485754490057,
+      5994573433705336715,
+      6026084328855838385,
+      6296465761523206072,
+      6298513503145691368
+    ],
+    "🙏": [
+      5271835789041366736,
+      5296336992622099699,
+      5296473353538780475,
+      5301189884759783672,
+      5303068327361406596,
+      5314269937076825018,
+      5390816214320687781,
+      5422411582887960168,
+      5440677279933965400,
+      5451829050848885419,
+      5458697734347318508,
+      5810089530186799934,
+      5857456954967856400,
+      5904646778556258113,
+      5911159851647505885
+    ],
+    "🤔": [
+      5888796803045790748,
+      5888810233408524498,
+      5888881959362368406,
+      5888899491418870468,
+      5888914437905060596,
+      5888936999368266979,
+      5889010688122163763,
+      5922334854040529621,
+      5942718468179628637,
+      5988026829804414574,
+      6043960760130868895,
+      6147625684219993899,
+      6226254075709623458,
+      6226507835262372496,
+      6314250542491109860
+    ],
+    "🤝": [
+      5242521142597543085,
+      5244956354694637935,
+      5260341966930982507,
+      5260725142438294253,
+      5413376509295476881,
+      5415942885398849948,
+      5875494829768578949,
+      5911271585221710692,
+      5990343805746814903
+    ],
+    "🤣": [
+      5438527111931403259,
+      5438539103480090887,
+      5440859635655418170,
+      5458393470274140143,
+      5458440268237793750,
+      5458528916362786888,
+      5458537214239603055,
+      5458814870990387249,
+      5458836358711766616,
+      5798661850572789694,
+      5809801913406855577,
+      5886235632442808894,
+      5922608666795580060,
+      6044091902662286454,
+      6044385416432327843
+    ],
+    "🤬": [
+      5373123633415723713,
+      5379978959565906947,
+      5388709983833581240,
+      5391265794317364520,
+      5415973444091158422,
+      5469778719906232145,
+      5469937994473418673,
+      5472404912019105421,
+      5814685673474494505,
+      5839346400730550638,
+      5839380446936309646,
+      5961042782939255288,
+      5987915882209222957,
+      6044293242139189065,
+      6048379293635975213
+    ],
+    "🥰": [
+      5411605651329656317,
+      5420511343327321535,
+      5422349365991711125,
+      5422578403712704538,
+      5422679356918998266,
+      5445109256686685574,
+      5451640295626133757,
+      5453903511462894839,
+      5467628053687449379,
+      5470122759671526778,
+      5471987355298585260,
+      5805496277412094375,
+      5911117885522055968,
+      5922586251361262543,
+      5933681912823421887
+    ]
+  }
+}

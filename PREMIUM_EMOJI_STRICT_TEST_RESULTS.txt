@@ -1,0 +1,35 @@
+PREMIUM EMOJI CONVERTER — STRICT MAPPING TEST RESULTS (v0.09.13 V2 + LIVE RE-VERIFY)
+====================================================================================
+Date: 2026-09-17 (resolve زنده دوم — راستی‌آزمایی مستقل با Bot API/MTProto)
+Runner: python 3.12 / Telethon 1.44.0 (pinned) / pytest
+
+Premium Emoji suites (offline, no sockets):
+  tests/test_premium_emoji_strict.py      32 passed  (31 قبلی + fallback_record جدید)
+  tests/test_premium_emoji_converter.py   38 passed
+  سایر suiteهای premium emoji (injector 36 / prefix 59 / production 58)  153 passed
+  مجموع ناحیه Premium Emoji:  223 passed, 0 failed
+
+Full project suite:
+  6 failed, 762 passed
+  همه ۶ شکست، baseline قدیمی و نامرتبط با این پچ هستند (قبل از پچ هم همین‌هاست):
+    - test_admin_user_pagination (تست stale با سبک patch قدیمی)
+    - test_hardening_v097 config (تست stale؛ os.getenv عمدی TRIAL_DURATION_HOURS)
+    - test_memory_streaming_lock_pagination x2 (وابسته به DB محیط sandbox)
+    - test_release_regression markdown escape (تست stale)
+    - test_user_streaming broadcast (وابسته به DB محیط sandbox)
+  هیچ تستی از ناحیه Premium Emoji / Converter / Panel / Prefix شکست نخورد.
+
+LIVE RESOLVE (tools/resolve_premium_emoji_mapping.py — منبع رسمی):
+  token: از ENV (Bot) — api: ENV — method: messages.getCustomEmojiDocuments
+  checked=638  resolved=638  missing=0  calls=7
+  active(30): 😂 🔥 ❤️ 😍 🥰 😘 😎 😈 😭 😡 🤔 👍 👎 🙏 💯 👑 💎 ✨ ⚡ 🎉 🤝 💔 😀 🤣 😢 😱 😴 😏 🤬 💪
+  rejected(0)   inactive(1): 🚀
+  نگاشت زنده تولیدشده با PREMIUM_EMOJI_MAP ارسالی: 100% IDENTICAL (صفر drift)
+  FALLBACK_DOCUMENT_ID=5938388342281343001 → telegram alt واقعی: «🙄» → REJECT
+
+Live strict smoke (tools/premium_emoji_strict_smoke.py):
+  ✉️ سلام 😂🔥❤️   → 😂 🔥 ❤️ هر سه entity با alt زنده دقیقاً برابر ✅
+  ✉️ عالی شد 👑💎   → 👑 💎 با alt زنده دقیقاً برابر ✅
+  ✉️ دمت گرم 🚀✨   → ✨ تبدیل شد (alt زنده ✅)؛ 🚀 بدون تبدیل (تأییدشده نیست) ✅
+  offline guards: idempotent / بدون fallback / متن دست‌نخورده → OK
+  checks=6 failures=0

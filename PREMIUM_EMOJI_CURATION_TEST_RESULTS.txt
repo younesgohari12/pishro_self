@@ -1,0 +1,19 @@
+Premium Emoji Curation verification — 2026-09-16
+Python 3.12.14 / Telethon 1.44.0 / pytest 9.1.1
+Final full suite: 587 passed, 6 failed in 22.66s.
+Premium injector + production + new curation: 129 passing cases in full suite.
+New curation tests: 35 passed in 2.19s (separate focused run).
+Existing tests retained unchanged. No live Telegram calls or visual review.
+
+The same six unrelated baseline failures remain:
+tests/test_admin_user_pagination.py::test_admin_users_page_two
+tests/test_hardening_v097.py::test_config_is_python_only_and_validates_without_values
+tests/test_memory_streaming_lock_pagination.py::test_iter_user_ids_does_not_hold_lock_while_consuming
+tests/test_memory_streaming_lock_pagination.py::test_large_user_pagination_is_page_bounded
+tests/test_release_regression.py::test_release_markdown_escape
+tests/test_user_streaming.py::test_broadcast_can_consume_iterator
+
+Byte comparison: all pre-existing files identical except
+ tools/premium_emoji_live_smoke.py
+ PREMIUM_EMOJI_MAPPING_STATUS.json
+Runtime, login, sessions, storage, security and billing files unchanged.

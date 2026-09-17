@@ -1,0 +1,61 @@
+{
+  "version": "0.09.9_AUDITED_FIXED",
+  "base_version": "PishroSelf_v0.09.9_AI_TRANSLATE_READY",
+  "generated_at": "2026-09-12",
+  "checks": {
+    "python_ast_all_files": {
+      "status": "PASS",
+      "python_files": 93,
+      "syntax_errors": 0
+    },
+    "compileall": "PASS",
+    "exact_duplicate_files": 0,
+    "runtime_dependencies_declared": [
+      "telethon",
+      "aiohttp",
+      "openai",
+      "jdatetime"
+    ],
+    "ai_translate_tests": {
+      "status": "PASS",
+      "passed": 19,
+      "failed": 0
+    },
+    "sandbox_regression_without_telethon": {
+      "status": "PASS",
+      "passed": 71,
+      "failed": 0,
+      "files": [
+        "tests/test_ai_translate.py",
+        "tests/test_crypto.py",
+        "tests/test_forced_join.py",
+        "tests/test_game_service.py",
+        "tests/test_membership_support_admin.py",
+        "tests/test_message_font.py",
+        "tests/test_message_saver.py",
+        "tests/test_panel_layout.py",
+        "tests/test_tabchi.py",
+        "tests/test_trial_support_panel_source.py"
+      ]
+    },
+    "ai_two_user_concurrency": "PASS",
+    "ai_same_user_serialization": "PASS",
+    "ai_sqlite_restart_persistence": "PASS",
+    "avalai_http_contract_mock": "PASS",
+    "avalai_http_429_mock": "PASS",
+    "web_search_cache_and_failure_path": "PASS",
+    "full_telethon_suite": "BLOCKED_IN_SANDBOX_TELETHON_NOT_INSTALLED",
+    "live_telegram": "NOT_RUN_SANDBOX_NO_NETWORK_OR_CREDENTIAL_USE",
+    "live_avalai_api": "NOT_RUN_NO_USER_KEY_CONSUMPTION",
+    "live_search_api": "NOT_RUN_NO_USER_KEY_CONSUMPTION",
+    "zip_integrity": "PASS"
+  },
+  "data_safety": {
+    "destructive_migration": false,
+    "api_keys_changed": false,
+    "user_data_deleted": false,
+    "ai_history_limit": 20,
+    "per_user_history_isolation": true,
+    "settings_persist_in_sqlite": true
+  }
+}

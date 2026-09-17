@@ -1,0 +1,29 @@
+PREMIUM EMOJI CONVERTER — TEST RESULTS (v0.09.13)
+==================================================
+Date: 2026-09-16
+Runner: python 3.12 / pytest (offline, no Telegram network; conftest forbids sockets)
+
+New suite: tests/test_premium_emoji_converter.py
+Result:   36 passed, 0 failed
+
+Full project suite:
+  current release : 708 passed, 26 failed
+  baseline (pre-change ZIP): 672 passed, 26 failed
+  new tests       : +36
+  failure diff vs baseline: IDENTICAL (pre-existing, environment/contract tests)
+
+Covered requirements:
+  [x] self message converts emoji               [x] bot message untouched
+  [x] 30 emoji mapping completeness             [x] MessageEntityCustomEmoji creation
+  [x] UTF-16 offsets (astral + ZWJ)             [x] Markdown preservation
+  [x] HTML preservation                         [x] caption conversion
+  [x] media without caption -> no new message   [x] existing custom emoji preserved
+  [x] duplicate prevention (idempotent)         [x] invalid document_id -> fallback
+  [x] forward untouched                         [x] enable/disable panel button
+  [x] settings persistence (db roundtrip)       [x] admin report ENV-only, no token in code
+  [x] album captions independent                [x] rejection fallback once, no duplicates
+  [x] cooldown after rejection                  [x] per-client idempotent install/uninstall
+
+Live metadata (not part of pytest):
+  messages.getCustomEmojiDocuments resolved 210/210 channel-sourced IDs;
+  alt-verified mapping for 5 targets (see PREMIUM_EMOJI_CONVERTER_RESOLVED_IDS.json).

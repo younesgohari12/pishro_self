@@ -1,0 +1,17 @@
+{
+  "python": "3.12.14",
+  "fixture_documents": 180,
+  "fixture_note": "Synthetic alt bindings: logic benchmark only; no live visual validation",
+  "iterations_hot": 2000,
+  "hot_median_us": 10.56,
+  "hot_p95_us": 11.14,
+  "cold_median_us": 36.49,
+  "cold_p95_us": 52.4,
+  "long_message_cache_entries": 20,
+  "accounted_cache_bytes": 257760,
+  "retained_tracemalloc_bytes": 271909,
+  "peak_tracemalloc_bytes": 562865,
+  "entry_cap": 256,
+  "accounted_byte_cap": 262144,
+  "note": "One account, this machine; network excluded. Byte cap is an accounting bound, not total process RSS."
+}
