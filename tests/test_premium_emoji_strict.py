@@ -35,6 +35,10 @@ CROWN = MAP['👑'][0]
 GEM = MAP['💎'][0]
 SPARKLES = MAP['✨'][0]
 
+# شناسه ثابت قدیمی (fallback عمومی) — از DEBUG_FINAL به بعد حذف شده و فقط
+# به‌عنوان «سنتینل ممنوع» در تست‌ها استفاده می‌شود.
+BANNED_FALLBACK_ID = 5938388342281343001
+
 
 def run(coro):
     return asyncio.run(coro)
@@ -106,7 +110,7 @@ def test_strict_mapping_matches_real_telegram_alts():
 def test_strict_mapping_has_no_generic_fallback():
     """هیچ کلیدی به شناسه ثابت fallback منصوب نیست؛ fallback فقط مرجع قدیمی است."""
     all_ids = [i for ids in MAP.values() for i in ids]
-    assert mapping_module.FALLBACK_DOCUMENT_ID not in all_ids
+    assert BANNED_FALLBACK_ID not in all_ids
     # هر ایموجی یا شناسه تأییدشده دارد یا آگاهانه غیرفعال است (لیست خالی).
     for emoji, ids in MAP.items():
         assert ids or emoji in mapping_module.CHECKED_EMOJIS
@@ -168,7 +172,7 @@ def test_fallback_disabled_for_every_checked_emoji():
     for emoji in mapping_module.CHECKED_EMOJIS:
         text, entities = engine.convert(f'x {emoji} y', [])
         for entity in entities:
-            assert entity.document_id != mapping_module.FALLBACK_DOCUMENT_ID
+            assert entity.document_id != BANNED_FALLBACK_ID
 
 
 def test_inactive_emoji_stays_unicode_rocket():
@@ -351,7 +355,8 @@ def test_forward_messages_never_wrapped():
 # ------------------------------------------------- 15) resolver tool core
 def test_resolver_collects_all_project_ids():
     ids = resolver.collect_project_document_ids()
-    assert mapping_module.FALLBACK_DOCUMENT_ID in ids
+    # شناسه fallback ممنوع دیگر هرگز جمع نمی‌شود (DEBUG_FINAL).
+    assert BANNED_FALLBACK_ID not in ids
     for values in MAP.values():
         for document_id in values:
             assert document_id in ids
@@ -404,34 +409,17 @@ def test_resolver_document_info_extraction():
                     'media_type': 'application/x-tgsticker'}
 
 
-def test_fallback_record_decision_logic():
-    """ابزار باید تصمیم fallback را فقط از alt واقعی تلگرام بسازد."""
-    documents = {str(mapping_module.FALLBACK_DOCUMENT_ID):
-                 {'alt': '🙄', 'free': False, 'animated': True,
-                  'media_type': 'application/x-tgsticker'}}
-    record = resolver.fallback_record(documents)
-    assert record['document_id'] == mapping_module.FALLBACK_DOCUMENT_ID
-    assert record['telegram_alt'] == '🙄'
-    assert record['in_target_list'] is False
-    assert 'REJECTED' in record['decision']
-    # پاسخ ندادن تلگرام هم reject است؛ هیچ حالتی به allow نمی‌رسد مگر تطبیق دقیق.
-    assert resolver.fallback_record({})['decision'].startswith('REJECTED')
-    allow = resolver.fallback_record(
-        {str(mapping_module.FALLBACK_DOCUMENT_ID):
-         {'alt': '🔥', 'free': True, 'animated': False,
-          'media_type': 'image/webp'}})
-    assert allow['in_target_list'] is True
-    assert 'ALLOWED' in allow['decision']
-
-
 def test_fallback_document_id_rejected_by_resolution_record():
-    """شناسه fallback مالک: alt واقعی تلگرام آن ✨/😂/🔥 نیست → در نگاشت نیست."""
+    """شناسه fallback مالک: alt واقعی تلگرام آن ✨/😂/🔥 نیست → در نگاشت نیست.
+
+    از DEBUG_FINAL به بعد این شناسه از همه ماژول‌های زمان اجرا حذف شده و
+    فقط به‌عنوان سنتینل ممنوع در تست‌ها وجود دارد."""
     payload = json.loads((ROOT / 'PREMIUM_EMOJI_RESOLVED_MAPPING.json')
                          .read_text(encoding='utf-8'))
     record = payload['fallback_document_id']
-    assert record['document_id'] == mapping_module.FALLBACK_DOCUMENT_ID
+    assert record['document_id'] == BANNED_FALLBACK_ID
     assert record['telegram_alt']
     assert record['in_target_list'] is False
     assert 'REJECTED' in record['decision']
     all_ids = [i for ids in MAP.values() for i in ids]
-    assert mapping_module.FALLBACK_DOCUMENT_ID not in all_ids
+    assert BANNED_FALLBACK_ID not in all_ids

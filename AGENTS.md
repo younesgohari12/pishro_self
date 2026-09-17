@@ -94,9 +94,12 @@ routine compatible updates do not require a new approval step.
   emoji may only become the custom emoji whose real alt is itself.
 - Strict Mode (`PREMIUM_EMOJI_STRICT_MODE = True`, default): no generic
   fallback. A mapping key with no alt-validated IDs is inactive (`[]`) and the
-  emoji stays plain Unicode. The owner fallback `5938388342281343001` (live
-  alt: «🙄») is NEVER auto-assigned by the converter; it only remains for the
-  independent Premium Prefix feature and the legacy `strict=False` escape.
+  emoji stays plain Unicode. Since DEBUG_FINAL the generic fallback id and the
+  whole Premium Prefix system (placeholder emoji, auto-prefix injection,
+  `PREMIUM_EMOJI_PREFIX_*` config) are REMOVED; no sent message ever gains an
+  automatic emoji. The central mapping file is `emoji_map.json`
+  (`tools/export_emoji_map.py` regenerates it; broken/missing file = built-in
+  map, never a crash).
 - The resolver tool `tools/resolve_premium_emoji_mapping.py` is the only way
   IDs enter/leave the map; its official output is
   `PREMIUM_EMOJI_RESOLVED_MAPPING.json` (document_id/alt/free/animated/
@@ -115,7 +118,11 @@ routine compatible updates do not require a new approval step.
 - The per-account toggle lives in user settings (`premium_emoji_converter`:
   None/True/False). None means the release default
   `PREMIUM_EMOJI_CONVERTER_ENABLED` applies; panel choices persist and win.
-  The independent Premium Prefix feature and its config stay untouched.
+  Pre-send conversion on the client send methods is the ONLY main path;
+  `install_premium_emoji_outgoing_injector` is a FALLBACK reserved for
+  messages sent from other devices (phone/desktop) that never crossed the
+  Python wrappers. Every fallback/error is reported to the admin log bot
+  (`services/telegram_logger.py`, token only via `PREMIUM_LOG_BOT_TOKEN`).
 - `services/premium_report.py` reads its bot token only from the
   `PREMIUM_REPORT_BOT_TOKEN` environment variable. No token value may be
   committed to the repository.

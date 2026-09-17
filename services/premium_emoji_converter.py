@@ -9,15 +9,22 @@ UTF-16 اضافه می‌شود. سیستم idempotent است: ایموجیِ ز
 
 ⚖️ Strict Mapping (پیش‌فرض: config.PREMIUM_EMOJI_STRICT_MODE=True):
 هر ایموجی فقط به Custom Emoji با alt دقیقاً برابر تبدیل می‌شود؛ یعنی فقط اگر
-PREMIUM_EMOJI_MAP برای آن ایموجی شناسه تأییدشده داشته باشد. نگاشت با
-لیست خالی یعنی «بررسی‌شده اما غیرفعال» و ایموجی دست‌نخورده می‌ماند.
-fallback عمومی (شناسه ثابت برای همه ایموجی‌ها) ممنوع است و FALLBACK_DOCUMENT_ID
-فقط برای قابلیت مستقل Premium Prefix و رفتار قدیمی strict=False نگه داشته
-شده است. نتیجه: 😂 هرگز به Premium غیر-😂 تبدیل نمی‌شود.
+نگاشت مرکزی برای آن ایموجی شناسه تأییدشده داشته باشد. نگاشت با لیست خالی
+یعنی «بررسی‌شده اما غیرفعال» و ایموجی دست‌نخورده می‌ماند. fallback عمومی
+(شناسه ثابت برای همه ایموجی‌ها) و سیستم Prefix Emoji کاملاً حذف شده‌اند؛
+هیچ پیامی هرگز به‌صورت خودکار ایموجی اضافه نمی‌گیرد. نتیجه: 😂 هرگز به
+Premium غیر-😂 تبدیل نمی‌شود و پیام همیشه بدون کاراکتر اضافه ارسال می‌شود.
 
-Design constraints (same philosophy as premium_emoji_prefix):
+🚰 Unified Pipeline (v0.09.13 DEBUG_FINAL):
+    Input → Pre Processor (_parse_message_text) → Custom Emoji Converter
+          → Telegram Entity Builder (UTF-16 offsets) → Sender
+تنها این wrapper های پیش از ارسال روی کلاینت سلف نصب می‌شوند؛ send-then-edit
+فقط fallback است (برای پیام‌های رسیده از دستگاه‌های دیگر که فیزیکی از این
+مسیر عبور نمی‌کنند).
+
+Design constraints (same philosophy as the previous strict release):
 - No network request on the send path; mapping is a static verified file.
-- No outgoing event handler; only public send/edit wrappers are wrapped.
+- No outgoing event handler in the main path; only send/edit wrappers.
 - forward_messages is never wrapped; forwards stay byte-identical.
 - On Telegram emoji rejection the original content is retried exactly once;
   DocumentInvalid on media/albums re-raises to avoid replaying committed chunks.
@@ -26,6 +33,8 @@ from __future__ import annotations
 
 import copy
 import inspect
+import json
+import os
 import random
 import re
 import time
@@ -41,7 +50,6 @@ from telethon.tl.types import Message, MessageEntityCustomEmoji
 from services import custom_emoji_service as custom
 from services import telegram_logger as tlog
 from premium_emoji_mapping import (
-    FALLBACK_DOCUMENT_ID,
     PREMIUM_EMOJI_MAP,
     PREMIUM_EMOJI_MODES,
     MAX_IDS_PER_EMOJI,
@@ -121,41 +129,71 @@ def _new_custom_entities(result, existing):
             and (e.offset, e.length, getattr(e, 'document_id', None)) not in old]
 
 
-def _emit_conversion_debug(engine, meta, text, added):
-    """بلوک [PREMIUM DEBUG] + گزارش 🎨 تبدیل موفق (فقط وقتی entity جدید ساخته شد)."""
-    if not added:
+def _conversion_record(text, added):
+    """خلاصه تبدیل برای گزارش‌های پس از ارسال (در meta ذخیره می‌شود)."""
+    return {
+        'text': text,
+        'emojis': _unique_emojis(text)[:10],
+        'document_ids': [getattr(e, 'document_id', None) for e in added],
+        'entity_count': len(added),
+    }
+
+
+def _emit_premium_debug_block(meta, record):
+    """بلوک [PREMIUM DEBUG] در لحظه ساخته‌شدن entity (پرچم PREMIUM_EMOJI_DEBUG)."""
+    if not getattr(config, 'PREMIUM_EMOJI_DEBUG', False):
         return
     meta = meta or {}
-    chat_id = meta.get('chat_id')
-    method = meta.get('method', 'unknown')
-    document_ids = [getattr(e, 'document_id', None) for e in added]
-    if getattr(config, 'PREMIUM_EMOJI_DEBUG', False):
-        tlog.send_premium_debug_block(tlog.format_premium_debug(
-            method=method, chat_id=chat_id, original_text=(text or '')[:300],
-            detected=_unique_emojis(text), document_ids=document_ids,
-            entity_count=len(added)))
+    tlog.send_premium_debug_block(tlog.format_premium_debug(
+        method=meta.get('method', 'unknown'), chat_id=meta.get('chat_id'),
+        original_text=(record['text'] or '')[:300], detected=record['emojis'],
+        document_ids=record['document_ids'], entity_count=record['entity_count'],
+        chat_type=meta.get('chat_type', 'Unknown')))
+
+
+def _emit_custom_emoji_block(meta, *, entity_status, send_status):
+    """بلوک [CustomEmoji] — Chat/Emoji/ID/Entity/Send (پرچم CUSTOM_EMOJI_DEBUG)."""
+    if not getattr(config, 'CUSTOM_EMOJI_DEBUG', False):
+        return
+    meta = meta or {}
+    record = meta.get('conversion') or {}
+    if not record.get('document_ids'):
+        return
+    tlog.send_custom_emoji_debug(tlog.format_custom_emoji_debug(
+        chat_type=meta.get('chat_type', 'Unknown'), emoji=record.get('emojis'),
+        document_id=record['document_ids'], entity_status=entity_status,
+        send_status=send_status, method=meta.get('method', 'send')))
+
+
+def _emit_success_report(engine, meta):
+    """گزارش 🎨 تبدیل موفق — فقط بعد از ارسال موفق پیام با entity جدید."""
+    meta = meta or {}
+    record = meta.get('conversion') or {}
+    document_ids = record.get('document_ids') or []
     tlog.send_premium_event(
         '🎨 Premium Emoji Converted',
         {
             'User': engine.owner_id,
-            'Chat': chat_id,
-            'Method': method,
-            'Emoji': ' '.join(_unique_emojis(text)[:10]),
+            'Chat': meta.get('chat_id'),
+            'Chat Type': meta.get('chat_type', 'Unknown'),
+            'Method': meta.get('method', 'unknown'),
+            'Emoji': ' '.join(record.get('emojis') or []),
             'Document ID': document_ids[0] if len(document_ids) == 1 else document_ids,
             'Status': 'SUCCESS',
         },
         level='INFO', kind='converted')
 
 
-def _mapping_key(token):
+def _mapping_key(token, mapping=None):
     """Return the mapping entry for a matched emoji token, VS16-tolerant."""
-    if token in PREMIUM_EMOJI_MAP:
+    source = mapping if mapping is not None else PREMIUM_EMOJI_MAP
+    if token in source:
         return token
     stripped = token.replace('\ufe0f', '')
-    if stripped in PREMIUM_EMOJI_MAP:
+    if stripped in source:
         return stripped
     decorated = stripped + '\ufe0f'
-    if decorated in PREMIUM_EMOJI_MAP:
+    if decorated in source:
         return decorated
     return None
 
@@ -163,10 +201,10 @@ def _mapping_key(token):
 def _sanitize_pool(ids, strict=True):
     """Validate/dedupe configured IDs.
 
-    strict=True (پیش‌فرض): ورودی نامعتبر یا خالی → استخر خالی؛ یعنی بدون
-    تبدیل. هیچ شناسه ثابتی جایگزین نمی‌شود (fallback عمومی ممنوع).
-    strict=False: رفتار قدیمی نسخه قبل — استخر خالی/نامعتبر به شناسه
-    تست‌شده مالک ارجاع می‌شود (فقط برای بازگشت موقت؛ پیش‌فرض نیست).
+    ورودی نامعتبر یا خالی همیشه → استخر خالی؛ یعنی بدون تبدیل. هیچ شناسه
+    ثابتی جایگزین نمی‌شود (fallback عمومی در این نسخه کاملاً حذف شده است).
+    پارامتر ``strict`` فقط برای سازگاری با فراخوان‌های قدیمی نگه داشته شده
+    و دیگر هیچ اثری روی رفتار ندارد.
     """
     pool = []
     for value in ids if isinstance(ids, (list, tuple)) else []:
@@ -178,19 +216,125 @@ def _sanitize_pool(ids, strict=True):
             pool.append(value)
         if len(pool) == MAX_IDS_PER_EMOJI:
             break
-    if pool:
-        return tuple(pool)
-    return () if strict else (FALLBACK_DOCUMENT_ID,)
+    return tuple(pool)
+
+
+def _map_file_path(path=None):
+    """مسیر مطلق فایل نگاشت مرکزی؛ خالی/نامعتبر → None (بدون crash)."""
+    path = path if path is not None else getattr(
+        config, 'PREMIUM_EMOJI_MAP_FILE', 'emoji_map.json')
+    if path is None:
+        return None
+    try:
+        path = os.fspath(path)
+    except TypeError:
+        return None
+    if not path or not isinstance(path, str):
+        return None
+    if not os.path.isabs(path):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(root, path)
+    return path
+
+
+def load_emoji_map(path=None):
+    """خواندن فایل مرکزی emoji_map.json ({emoji: [document_id, ...]}).
+
+    قرارداد امنیتی spec مالک: هر خطا (فایل نبود، JSON خراب، شناسه نامعتبر)
+    فقط یعنی «نگاشت فایل نادیده گرفته شود»؛ None برمی‌گردد تا نگاشت داخلی
+    تأییدشده استفاده شود. هیچ‌وقت exception بالا نمی‌دهد.
+    """
+    location = _map_file_path(path)
+    if not location:
+        return None
+    try:
+        with open(location, 'r', encoding='utf-8') as handle:
+            raw = json.load(handle)
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(raw, dict) or not raw:
+        return None
+    # هم فرمت ساده ({ایموجی: شناسه}) و هم فرمت ابزار رسمی export
+    # ({"_comment": ..., "_source": ..., "map": {...}}) پذیرفته می‌شود.
+    if isinstance(raw.get('map'), dict):
+        raw = raw['map']
+    result = {}
+    for emoji, ids in raw.items():
+        if not isinstance(emoji, str) or not emoji:
+            continue
+        if isinstance(ids, (str, int)):
+            ids = [ids]
+        if not isinstance(ids, (list, tuple)):
+            continue
+        cleaned = []
+        for value in ids:
+            try:
+                cleaned.append(custom.parse_document_id(value))
+            except custom.EmojiError:
+                continue
+            if len(cleaned) == MAX_IDS_PER_EMOJI:
+                break
+        result[emoji] = cleaned
+    return result or None
+
+
+def _chat_kind(peer):
+    """نوع چت فقط از نوع آبجکت/شناسه علامت‌گذاری‌شده؛ بدون هیچ درخواست شبکه.
+
+    خروجی یکی از: Saved / Private / Group / Channel / Unknown.
+    قرارداد شناسه‌های علامت‌گذاری Telethon: کاربر مثبت، گروه‌های پایه منفیِ
+    کوچک، کانال/سوپرگروه با پیشوند -100.
+    """
+    try:
+        if peer is None:
+            return 'Unknown'
+        if isinstance(peer, types.InputPeerSelf):
+            return 'Saved'
+        if isinstance(peer, (types.InputPeerUser, types.InputUser, types.User)):
+            return 'Private'
+        if isinstance(peer, types.InputPeerChat):
+            return 'Group'
+        if isinstance(peer, (types.InputPeerChannel, types.InputChannel,
+                             types.Channel)):
+            if isinstance(peer, types.Channel) and getattr(peer, 'megagroup', False):
+                return 'Group'
+            return 'Channel'
+        if isinstance(peer, (types.Chat, types.ChatForbidden)):
+            return 'Group'
+        if isinstance(peer, (types.PeerUser,)):
+            return 'Private'
+        if isinstance(peer, (types.PeerChat,)):
+            return 'Group'
+        if isinstance(peer, (types.PeerChannel,)):
+            return 'Channel'
+        marked = utils.get_peer_id(peer)
+        if isinstance(marked, int):
+            if marked > 0:
+                return 'Private'
+            if marked > -1000000000000:
+                return 'Group'
+            return 'Channel'
+    except Exception:  # noqa: BLE001 - نوع چت هرگز نباید مسیر ارسال را بشکند
+        pass
+    return 'Unknown'
+
 
 
 class PremiumEmojiConverter:
     """Stateless-per-message converter; per-emoji picker holds only an index."""
 
     def __init__(self, *, premium=False, is_enabled=None, mode=None, mapping=None,
-                 strict=None):
+                 strict=None, map_path=None):
         self.premium = bool(premium)
         self.is_enabled = is_enabled  # optional callable -> None/True/False
-        self.mapping = dict(mapping if mapping is not None else PREMIUM_EMOJI_MAP)
+        # فایل مرکزی emoji_map.json فقط وقتی فراخوان نگاشتی نداده است؛
+        # هر خطا در خواندن فایل یعنی نگاشت داخلی تأییدشده استفاده می‌شود.
+        file_map = None
+        if mapping is None:
+            file_map = load_emoji_map(map_path)
+        self.map_source = 'emoji_map.json' if file_map is not None else 'builtin'
+        self.mapping = dict(file_map if file_map is not None else
+                            (mapping if mapping is not None else PREMIUM_EMOJI_MAP))
         mode_value = str(mode or getattr(config, 'PREMIUM_EMOJI_MODE', 'round_robin') or '')
         self.mode = mode_value if mode_value in PREMIUM_EMOJI_MODES else 'round_robin'
         if strict is None:
@@ -224,9 +368,9 @@ class PremiumEmojiConverter:
     def pick_document_id(self, emoji):
         """شناسه فقط از نگاشت دقیق همان ایموجی؛ بدون نگاشت دقیق → None.
 
-        None یعنی «هیچ تبدیلی انجام نشود» (متن اصلی حفظ می‌شود). در حالت
-        Strict هیچ مسیری به شناسه ثابت fallback ختم نمی‌شود."""
-        entry = _mapping_key(emoji)
+        None یعنی «هیچ تبدیلی انجام نشود» (متن اصلی حفظ می‌شود). استخر خالی
+        هرگز به شناسه ثابت fallback ختم نمی‌شود (fallback حذف شده است)."""
+        entry = _mapping_key(emoji, self.mapping)
         if entry is None:
             return None
         return self.selectors[entry].next(self.mode, self.rng)
@@ -293,7 +437,9 @@ class PremiumEmojiConverter:
         are supplied, so every existing formatting entity survives with the
         exact offsets Telegram produced.
 
-        ``meta`` (اختیاری) فقط برای گزارش [PREMIUM DEBUG] است: method/chat_id.
+        ``meta`` فقط برای گزارش‌هاست: method/chat_id/chat_type؛ اگر تبدیل
+        اتفاق بیفتد خلاصه آن در ``meta['conversion']`` می‌ماند تا بلوک
+        [CustomEmoji] و گزارش 🎨 بعد از ارسال با وضعیت واقعی Send صادر شوند.
         """
         if not isinstance(text, str) or not text:
             return text, formatting, False
@@ -308,9 +454,12 @@ class PremiumEmojiConverter:
         new_count = sum(isinstance(e, MessageEntityCustomEmoji) for e in result or [])
         changed = new_count > old_count
         if changed:
+            added = _new_custom_entities(result, existing)
+            record = _conversion_record(parsed, added)
+            if meta is not None:
+                meta['conversion'] = record
             try:
-                _emit_conversion_debug(self, meta, parsed,
-                                       _new_custom_entities(result, existing))
+                _emit_premium_debug_block(meta, record)
             except Exception:  # noqa: BLE001 - گزارش هرگز تبدیل را نمی‌شکند
                 pass
         return updated, result, changed
@@ -319,9 +468,11 @@ class PremiumEmojiConverter:
 def install_premium_emoji_converter(client, *, account, is_enabled=None):
     """Install once, only on a verified non-bot (user/self) account.
 
-    send_message/send_file(caption)/edit_message/_send_album are wrapped so
-    replies, AI answers, auto replies, translation and crypto outputs — which
-    all delegate to these Telethon methods — are covered automatically.
+    Unified Pipeline (مسیر اصلی): send_message/send_file(caption)/edit_message/
+    _send_album are wrapped PRE-SEND so replies, AI answers, auto replies,
+    translation, crypto, tabchi, command and scheduler outputs — which all
+    delegate to these Telethon methods — leave the client with real
+    MessageEntityCustomEmoji entities from the first byte on the wire.
     forward_messages is deliberately NOT wrapped.
     """
     if getattr(account, 'bot', None) is not False:
@@ -358,8 +509,14 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
             value = bound.arguments.get(target, '')
             supplied = bound.arguments.get('formatting_entities')
             parse_mode = bound.arguments.get('parse_mode', ())
+            peer = bound.arguments.get('entity')
+            if isinstance(peer, Message):
+                # edit_message(message_object, new_text): نوع چت از خود پیام
+                peer = getattr(peer, 'peer_id', None) or getattr(peer, 'input_chat', None)
             meta = {'method': method,
-                    'chat_id': _safe_chat_id(bound.arguments.get('entity'))}
+                    'chat_id': _safe_chat_id(peer),
+                    'chat_type': _chat_kind(peer),
+                    'conversion': None}
 
             async def prepare_value(text, formatting):
                 return await engine.prepare(client, text, formatting, parse_mode,
@@ -431,8 +588,10 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
             token = engine.bypass.set(True)
             try:
                 try:
-                    return await original(*bound.args, **bound.kwargs)
+                    result = await original(*bound.args, **bound.kwargs)
                 except REJECTED_ERRORS as exc:
+                    _emit_custom_emoji_block(meta, entity_status='CREATED',
+                                             send_status=f'FAILED ({type(exc).__name__})')
                     media = bound.arguments.get('file', kwargs.get('file'))
                     message_value = bound.arguments.get('message')
                     has_media = (field == 'caption' or media is not None
@@ -452,10 +611,13 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                             'Cooldown': f'{REJECTION_COOLDOWN_SECONDS}s',
                             'Method': method,
                             'Chat': meta.get('chat_id'),
+                            'Chat Type': meta.get('chat_type', 'Unknown'),
                         },
                         level='WARNING', kind='fallback')
                     return await original(*args, **kwargs)
                 except errors.FloodWaitError as exc:
+                    _emit_custom_emoji_block(meta, entity_status='CREATED',
+                                             send_status=f'FAILED (FloodWait {exc.seconds}s)')
                     tlog.send_error(
                         '❌ Telegram FloodWait',
                         {
@@ -467,15 +629,23 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
                     raise
                 except Exception as exc:
                     # خطاهای Send/Edit/RPC: ثبت و propagate (رفتار قبل حفظ می‌شود)
+                    _emit_custom_emoji_block(meta, entity_status='CREATED',
+                                             send_status=f'FAILED ({type(exc).__name__})')
                     tlog.send_error(
                         '❌ Telegram Send Error',
                         {
                             'Method': method,
                             'Error': f'{type(exc).__name__}: {exc}'[:400],
                             'Chat': meta.get('chat_id'),
+                            'Chat Type': meta.get('chat_type', 'Unknown'),
                         },
                         where=CONVERTER_MODULE)
                     raise
+                # ارسال موفق: بلوک [CustomEmoji] با Send: SUCCESS + گزارش 🎨
+                _emit_custom_emoji_block(meta, entity_status='CREATED',
+                                         send_status='SUCCESS')
+                _emit_success_report(engine, meta)
+                return result
             finally:
                 engine.bypass.reset(token)
         return wrapped
@@ -491,18 +661,21 @@ def install_premium_emoji_converter(client, *, account, is_enabled=None):
 
 
 def install_premium_emoji_outgoing_injector(client, engine):
-    """تزریق بعد از ارسال (Post-Send Fix) — فقط روی کلاینت Self نصب می‌شود.
+    """Fallback پس از ارسال (Post-Send Fix) — فقط روی کلاینت Self نصب می‌شود.
 
-    چرا؟ کانورتر فقط متدهای همین کلاینت پایتون را می‌بندد؛ پیام‌هایی که از
-    اپ رسمی (گوشی/دسکتاپ) ارسال می‌شوند هرگز از آن عبور نمی‌کنند و در چت‌های
-    خصوصی/گروه «بعضی پیام‌ها تبدیل نمی‌شدند». این هندلر پیام‌های خروجیِ رسیده
-    از هر دستگاهی را بررسی می‌کند و اگر ایموجی قابل‌نگاشتِ بدون entity دارد،
-    همان متن را با MessageEntityCustomEmoji دقیق edit می‌کند (متن عوض
-    نمی‌شود؛ glyph عوض نمی‌شود؛ فقط entity اضافه می‌شود).
+    ⚠️ این مسیر فقط FALLBACK است؛ مسیر اصلی، تبدیل «قبل از ارسال» توسط
+    install_premium_emoji_converter است. این هندلر فقط برای پیام‌هایی است که
+    از دستگاه دیگری (گوشی/اپ رسمی) ارسال شده‌اند و فیزیکی از wrapper های
+    کلاینت پایتون عبور نکرده‌اند: پیام خروجی رسیده بررسی می‌شود و اگر ایموجی
+    قابل‌نگاشتِ بدون entity دارد، همان متن با MessageEntityCustomEmoji دقیق
+    edit می‌کند (متن عوض نمی‌شود؛ glyph عوض نمی‌شود؛ فقط entity اضافه می‌شود).
 
     هرگز اجرا نمی‌شود روی: forward ها، پیام‌های via_bot (پنل اینلاین = محتوای
     ربات)، سرویس/اکشن‌ها، پیام‌هایی که قبلاً Custom Emoji دارند، وقتی کانورتر
     خاموش یا در cooldown است. کلاینت Bot هرگز این هندلر را نمی‌گیرد.
+    هر خطا (رد entity، عدم دسترسی edit، مشکل پیگیری Message ID و ...) با
+    دلیل دقیق و نوع چت به ربات گزارش Admin ارسال می‌شود — هیچ شکست بی‌صدایی
+    وجود ندارد.
     """
     if getattr(client, '_premium_emoji_outgoing_injector', None) is not None:
         return client._premium_emoji_outgoing_injector
@@ -538,14 +711,42 @@ def install_premium_emoji_outgoing_injector(client, engine):
                 return  # هیچ نگاشت دقیقی موجود نیست؛ همان ایموجی معمولی می‌ماند
             chat_id = getattr(event, 'chat_id', None)
             peer = getattr(message, 'input_chat', None)
+            if isinstance(peer, types.InputPeerSelf):
+                chat_type = 'Saved'
+            else:
+                chat_type = _chat_kind(peer if peer is not None
+                                       else getattr(message, 'peer_id', None))
+                if chat_type == 'Unknown' and chat_id is not None:
+                    # اگر پیام به Saved خودم رسیده باشد، chat_id برابر id خودم است.
+                    chat_type = 'Saved' if chat_id == getattr(
+                        client, '_self_id', None) else _chat_kind(chat_id)
+            meta = {'method': 'outgoing_fix', 'chat_id': chat_id,
+                    'chat_type': chat_type,
+                    'conversion': _conversion_record(updated, added)}
             if peer is None:
-                peer = await client.get_input_entity(chat_id)
+                try:
+                    peer = await client.get_input_entity(chat_id)
+                except (ValueError, TypeError) as exc:
+                    # علت دقیق در گزارش می‌آید؛ پیام دست‌نخورده می‌ماند.
+                    tlog.send_premium_event(
+                        '⚠️ Premium Emoji Fallback',
+                        {
+                            'Reason': f'resolve chat failed ({type(exc).__name__})',
+                            'Action': 'Original message kept (post-send fix skipped)',
+                            'Method': 'outgoing_fix',
+                            'Chat': chat_id,
+                            'Chat Type': chat_type,
+                        },
+                        level='WARNING', kind='fallback')
+                    return
             # فراخوانی مستقیم RPC: از wrap های send/edit عبور نمی‌کند تا
-            # نه prefix دوباره تزریق شود و نه تبدیل دوم رخ دهد (idempotent).
+            # نه تزریق دوم رخ دهد و نه تبدیل دوگانه (idempotent).
             await client(functions.messages.EditMessageRequest(
                 peer=peer, id=message.id, message=updated, entities=merged or None))
-            _emit_conversion_debug(engine, {'method': 'outgoing_fix', 'chat_id': chat_id},
-                                   updated, added)
+            _emit_premium_debug_block(meta, meta['conversion'])
+            _emit_custom_emoji_block(meta, entity_status='CREATED',
+                                     send_status='EDITED')
+            _emit_success_report(engine, meta)
         except REJECTED_ERRORS as exc:
             # تلگرام entity را رد کرد: cooldown + گزارش fallback (دلیل همان لحظه)
             engine.disabled_until = time.monotonic() + REJECTION_COOLDOWN_SECONDS
@@ -575,6 +776,7 @@ def install_premium_emoji_outgoing_injector(client, engine):
                     'Line': line_number,
                     'Method': 'outgoing_fix',
                     'Error': f'{type(exc).__name__}: {exc}',
+                    'Chat': getattr(event, 'chat_id', None),
                 },
                 where=CONVERTER_MODULE)
 

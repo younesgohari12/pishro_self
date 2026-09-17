@@ -576,27 +576,30 @@ def test_exact_smart_upgrade_preserves_old_emoji_preference_and_account_data(leg
         assert (root / name).read_bytes() == (legacy / name).read_bytes()
 
 
-def test_prefix_defaults_upgrade_and_restart_preserve_account_data(legacy, tmp_path):
-    defaults = {**SETTINGS, 'PREMIUM_EMOJI_ENABLED': True,
-                'PREMIUM_EMOJI_PREFIX_ENABLED': True,
-                'PREMIUM_EMOJI_PREFIX_MODE': 'round_robin',
-                'PREMIUM_EMOJI_PREFIX_IDS': [5938388342281343001]}
+def test_prefix_keys_removed_and_legacy_values_ignored(legacy, tmp_path):
+    """از DEBUG_FINAL به بعد سیستم Prefix حذف شده است.
+
+    کلیدهای PREMIUM_EMOJI_PREFIX_* دیگر جزو پیش‌فرض‌ها نیستند؛ اگر کانفیگ
+    قدیمی کاربر همچنان آن‌ها را داشته باشد، نادیده گرفته می‌شوند (بدون خطا)
+    و بقیه تنظیمات و داده‌ها سالم می‌مانند.
+    """
+    assert 'PREMIUM_EMOJI_PREFIX_ENABLED' not in SETTINGS
+    assert 'PREMIUM_EMOJI_PREFIX_MODE' not in SETTINGS
+    assert 'PREMIUM_EMOJI_PREFIX_IDS' not in SETTINGS
+    defaults = {**SETTINGS, 'PREMIUM_EMOJI_ENABLED': True}
     root = tmp_path / 'prefix-store'
     before = table_rows(legacy / 'db/tabchi.sqlite3')
     storage.initialize_store(root, legacy, defaults)
     saved = root / 'config.py'
+    # کانفیگ ذخیره‌شده فقط کلیدهای شناخته‌شده را می‌نویسد/می‌خواند.
     values = storage.load_user_config(saved, defaults)
-    assert values['PREMIUM_EMOJI_PREFIX_IDS'] == [5938388342281343001]
-    assert values['PREMIUM_EMOJI_PREFIX_ENABLED'] is True
-    assert values['PREMIUM_EMOJI_PREFIX_MODE'] == 'round_robin'
+    assert 'PREMIUM_EMOJI_PREFIX_IDS' not in values
+    assert 'PREMIUM_EMOJI_PREFIX_ENABLED' not in values
     assert values['PRICE_PER_DIAMOND'] == 30
-    storage.write_user_config(saved, {**values, 'PREMIUM_EMOJI_ENABLED': False,
-                                     'PREMIUM_EMOJI_PREFIX_ENABLED': False})
+    storage.write_user_config(saved, {**values, 'PREMIUM_EMOJI_ENABLED': False})
     storage.initialize_store(root, tmp_path / 'different-release', defaults)
     restarted = storage.load_user_config(saved, defaults)
     assert restarted['PREMIUM_EMOJI_ENABLED'] is False
-    assert restarted['PREMIUM_EMOJI_PREFIX_ENABLED'] is False
-    assert restarted['PREMIUM_EMOJI_PREFIX_IDS'] == [5938388342281343001]
     assert table_rows(root / 'db/tabchi.sqlite3') == before
     for name in ('sessions/user_101.txt', 'voice_settings.json', 'fosh_list.txt',
                  'message_cache/photo.jpg', 'banner/video.mp4', 'upload/audio.ogg'):

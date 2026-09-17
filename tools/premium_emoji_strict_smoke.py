@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import config  # noqa: E402
 from premium_emoji_mapping import (  # noqa: E402
-    CHECKED_EMOJIS, PREMIUM_EMOJI_MAP, FALLBACK_DOCUMENT_ID, normalize_emoji,
+    CHECKED_EMOJIS, PREMIUM_EMOJI_MAP, normalize_emoji,
 )
 from services.premium_emoji_converter import (  # noqa: E402
     PremiumEmojiConverter,
@@ -33,6 +33,11 @@ from services.premium_emoji_converter import (  # noqa: E402
 from tools.resolve_premium_emoji_mapping import (  # noqa: E402
     RESOLVE_TOKEN_ENVS, extract_document_info, read_env_token,
 )
+
+# شناسه ثابت قدیمی که از نسخه DEBUG_FINAL به بعد کاملاً ممنوع است؛ فقط به
+# عنوان «سنتینل ممنوع» در این ابزار تستی نگه داشته می‌شود.
+BANNED_FALLBACK_ID = 5938388342281343001
+FALLBACK_FREE_SENTINEL = BANNED_FALLBACK_ID
 
 SMOKE_MESSAGES = ['سلام 😂🔥❤️', 'عالی شد 👑💎', 'دمت گرم 🚀✨']
 
@@ -112,7 +117,7 @@ def offline_guards():
         # متن هرگز تغییر نمی‌کند و هیچ تکراری وجود ندارد.
         assert [e.offset for e in entities] == \
             sorted({e.offset for e in entities})
-        assert FALLBACK_DOCUMENT_ID not in {e.document_id for e in entities}
+        assert FALLBACK_FREE_SENTINEL not in {e.document_id for e in entities}
         again_text, again_entities = converter.convert(text, entities)
         assert again_text == text and len(again_entities) == len(entities)
     print('offline guards: OK (idempotent, no fallback, text intact)')

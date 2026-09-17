@@ -41,7 +41,6 @@ import config  # noqa: E402  (اعتبارنامه API فقط از config/ENV �
 from premium_emoji_mapping import (  # noqa: E402
     CHECKED_EMOJIS,
     EMOJI_SOURCE,
-    FALLBACK_DOCUMENT_ID,
     PREMIUM_EMOJI_MAP,
 )
 from services.premium_emoji_injector import CHANNEL_DOCUMENT_IDS  # noqa: E402
@@ -71,8 +70,9 @@ def alt_matches_target(alt, target):
 def collect_project_document_ids():
     """تمام شناسه‌های Custom Emoji موجود در پروژه — بدون تکرار، ترتیب پایدار.
 
-    منابع: کاتالوگ کانال، نگاشت فعلی مبدل، شناسه fallback مالک و تنظیمات
-    prefix. هیچ منبع خارجی یا حدسی اضافه نمی‌شود.
+    منابع: کاتالوگ کانال و نگاشت فعلی مبدل (و فایل مرکزی emoji_map.json در
+    صورت وجود). شناسه fallback و تنظیمات prefix حذف شده‌اند (v0.09.13
+    DEBUG_FINAL) و هیچ منبع خارجی یا حدسی اضافه نمی‌شود.
     """
     ids = []
     for value in CHANNEL_DOCUMENT_IDS:
@@ -80,13 +80,14 @@ def collect_project_document_ids():
     for value in PREMIUM_EMOJI_MAP.values():
         for item in value if isinstance(value, (list, tuple)) else ():
             ids.append(int(item))
-    ids.append(int(FALLBACK_DOCUMENT_ID))
     try:
-        import config
-        for item in getattr(config, 'PREMIUM_EMOJI_PREFIX_IDS', ()) or ():
-            ids.append(int(item))
+        from services.premium_emoji_converter import load_emoji_map
+        central = load_emoji_map() or {}
+        for items in central.values():
+            for item in items:
+                ids.append(int(item))
     except Exception:
-        pass  # config خارج از محیط تست ممکن است در دسترس نباشد؛ منابع بالا کافی‌اند
+        pass  # فایل مرکزی اختیاری است؛ منابع بالا کافی‌اند
     seen, ordered = set(), []
     for value in ids:
         if value > 0 and value not in seen:
@@ -164,11 +165,7 @@ def extract_document_info(document):
 # ------------------------------------------------------------------ resolver
 async def resolve_documents(client, ids, *, progress=None):
     """پرس‌وجوی دسته‌ای GetCustomEmojiDocuments؛ فقط شناسه‌های پرسیده‌شده
-    برمی‌گردند (پاسخ تلگرام مرجع است، هیچ چیز پر نمی‌شود).
-
-    import درون تابع است تا import ماژول در تست‌های آفلاین به شبکه/TL وابسته
-    نباشد (رفع باگ NameError نسخه قبل)."""
-    from telethon.tl.functions.messages import GetCustomEmojiDocumentsRequest
+    برمی‌گردند (پاسخ تلگرام مرجع است، هیچ چیز پر نمی‌شود)."""
     documents = {}
     calls = 0
     for start in range(0, len(ids), BATCH_SIZE):
@@ -193,48 +190,19 @@ def read_env_token(envs=RESOLVE_TOKEN_ENVS):
     return ''
 
 
-def fallback_record(documents):
-    """سابقهٔ تصمیم درباره شناسه ثابت مالک (FALLBACK_DOCUMENT_ID).
-
-    طبق قانون Strict این شناسه فقط زمانی می‌توانست وارد نگامت شود که alt
-    واقعی تلگرام دقیقاً یکی از ایموجی‌های هدف می‌بود؛ خروجی واقعی تلگرام
-    مرجع تصمیم است و هرگز حدس زده نمی‌شود."""
-    key = str(FALLBACK_DOCUMENT_ID)
-    meta = (documents or {}).get(key) or {}
-    alt = meta.get('alt', '')
-    in_target = any(alt_matches_target(alt, emoji) for emoji in CHECKED_EMOJIS)
-    if not alt:
-        decision = 'REJECTED: no alt returned by Telegram'
-    elif in_target:
-        decision = 'ALLOWED only for the exact matching emoji'
-    else:
-        decision = f'REJECTED: telegram alt is {alt!r}, not a target emoji'
-    return {
-        'document_id': FALLBACK_DOCUMENT_ID,
-        'telegram_alt': alt,
-        'in_target_list': in_target,
-        'decision': decision,
-    }
-
-
 def write_output(out_path, documents, target_status, *, calls, missing,
                  candidates_extra=0):
-    checked = len(collect_project_document_ids()) + candidates_extra
     payload = {
         'resolved_at': datetime.now(timezone.utc).isoformat(timespec='seconds'),
         'source': EMOJI_SOURCE,
         'method': RESOLVE_METHOD,
         'strict_semantic_matching': True,
         'totals': {
-            'checked': checked,
+            'checked': len(collect_project_document_ids()) + candidates_extra,
             'resolved': len(documents),
             'missing': missing,
             'calls': calls,
         },
-        'fallback_document_id': fallback_record(documents),
-        'selection_rule': ('alt must exactly equal the target emoji '
-                           '(VS16-insensitive); max 15 ids per emoji; '
-                           'empty list = checked but inactive'),
         'documents': documents,
         'target_status': target_status,
         'validated_map': build_validated_map(target_status),

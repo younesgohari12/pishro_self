@@ -21,7 +21,9 @@ from services import custom_emoji_service as custom
 from services import premium_emoji_converter as mod
 from services import premium_report as report
 
-DOC = mapping_module.FALLBACK_DOCUMENT_ID  # فقط برای تست‌های سازگاری قدیمی
+# شناسه ثابت قدیمی فقط به‌عنوان سنتینل ممنوع در تست‌ها استفاده می‌شود.
+BANNED_FALLBACK_ID = 5938388342281343001
+DOC = BANNED_FALLBACK_ID
 PEER = types.InputPeerUser(123, 456)
 NOW = datetime(2026, 9, 16, tzinfo=timezone.utc)
 MEDIA = types.InputMediaPhoto(types.InputPhoto(100, 200, b'reference'))
@@ -185,12 +187,13 @@ def test_invalid_document_id_entries_never_convert_in_strict_mode():
     assert text == '😂' and entities == []
 
 
-def test_legacy_mode_strict_false_keeps_owner_fallback():
-    """strict=False فقط برای بازگشت موقت به رفتار قدیمی نگه داشته شده است."""
+def test_strict_false_never_uses_fallback_anymore():
+    """از DEBUG_FINAL به بعد fallback عمومی حذف شده؛ strict=False هم همان
+    رفتار Strict را دارد: استخر خالی یعنی ایموجی دست‌نخورده."""
     engine = mod.PremiumEmojiConverter(mapping={'😂': ['garbage']}, strict=False)
-    assert engine.convert('😂')[1][0].document_id == DOC
+    assert engine.convert('😂') == ('😂', [])
     engine_empty = mod.PremiumEmojiConverter(mapping={'😂': []}, strict=False)
-    assert engine_empty.convert('😂')[1][0].document_id == DOC
+    assert engine_empty.convert('😂') == ('😂', [])
 
 
 def test_duplicate_prevention_is_idempotent():

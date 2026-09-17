@@ -46,7 +46,6 @@ from avalai_audio import AvalAIError, transcribe_audio
 from tts.avalai_tts import TTSError, text_to_speech
 from services.deleted_handler import register_deleted_message_handlers
 from services.font_formatter import register_message_font_handler
-from services.premium_emoji_prefix import install_premium_prefix, uninstall_premium_prefix
 from services.premium_emoji_converter import (
     install_premium_emoji_converter,
     install_premium_emoji_outgoing_injector,
@@ -346,7 +345,6 @@ async def run_self(session_path, session_string):
         if client is not None:
             uninstall_premium_emoji_outgoing_injector(client)
             uninstall_premium_emoji_converter(client)
-            uninstall_premium_prefix(client)
             try:
                 await client.disconnect()
             except Exception:
@@ -354,13 +352,15 @@ async def run_self(session_path, session_string):
 
 
 async def _run_connected_self(client, me, uid, sid):
-    install_premium_prefix(client, account=me)
-
-    # 🎨 Premium Emoji Converter — فقط خروجی همین اکانت کاربری؛ تنظیم روی/خاموش
-    # هر حساب از پنل سلف (دکمه peconv_toggle) خوانده می‌شود با کش کوتاه ۲ ثانیه‌ای
-    # تا هیچ ارسال منتظر دیتابیس نماند. اگر خواندن دیتابیس (مثلاً قفل SQLite)
-    # موقتاً شکست بخورد، آخرین مقدار معتبر استفاده می‌شود تا کانورتر بی‌دلیل
-    # خاموش نشود (RC-D).
+    # 🎨 Premium Emoji Converter (Unified Pipeline — مسیر اصلی تبدیل قبل از
+    # ارسال): تمام خروجی‌های این اکانت (پاسخ، AI، ترجمه، کریپتو، تبچی،
+    # دستورات، زمان‌بند، کپشن) از یک گذرگاه مرکزی عبور می‌کنند و از همان ابتدا
+    # با MessageEntityCustomEmoji ارسال می‌شوند. سیستم Prefix Emoji حذف شده؛
+    # هیچ پیامی ایموجی اضافه نمی‌گیرد. تنظیم روشن/خاموش هر حساب از پنل سلف
+    # (دکمه peconv_toggle) خوانده می‌شود با کش کوتاه ۲ ثانیه‌ای تا هیچ ارسال
+    # منتظر دیتابیس نماند. اگر خواندن دیتابیس (مثلاً قفل SQLite) موقتاً شکست
+    # بخورد، آخرین مقدار معتبر استفاده می‌شود تا کانورتر بی‌دلیل خاموش نشود
+    # (RC-D).
     def _converter_flag(_uid=uid, _cache={'value': None, 'at': 0.0}):
         now = time.monotonic()
         if now - _cache['at'] > 2.0:
@@ -374,8 +374,9 @@ async def _run_connected_self(client, me, uid, sid):
         return _cache['value']
 
     engine = install_premium_emoji_converter(client, account=me, is_enabled=_converter_flag)
-    # 🔧 Post-Send Fix: پیام‌های خروجی از هر دستگاه (گوشی/اپ رسمی) هم پرمیوم
-    # می‌شوند. قبل از فونت‌هندلر ثبت می‌شود تا اولویت پردازش با آن باشد.
+    # 🔧 Post-Send Fix — فقط FALLBACK: پیام‌های خروجی از دستگاه‌های دیگر
+    # (گوشی/اپ رسمی) که از wrapper های بالا عبور نکرده‌اند. قبل از فونت‌هندلر
+    # ثبت می‌شود تا اولویت پردازش با آن باشد.
     install_premium_emoji_outgoing_injector(client, engine)
     tabchi_models.init_custom_emojis_db()
 

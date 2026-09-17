@@ -197,6 +197,7 @@ _MIN_INTERVALS = {
     'premium_error': 30.0,  # ❌ Premium Emoji Error
     'post_fix': 5.0,        # 🔧 تزریق entity بعد از ارسال
     'debug': 3.0,           # [PREMIUM DEBUG]
+    'custom_debug': 3.0,    # [CustomEmoji] (سپرده مستقل تا بلوک rich سرکوب نشود)
     'generic': 30.0,        # send_log/error/warning عمومی
 }
 _GLOBAL_CAP_PER_MINUTE = 30
@@ -244,11 +245,12 @@ def _render(title, fields):
 
 
 def format_premium_debug(*, method, chat_id, original_text, detected, document_ids,
-                         entity_count, client='Self',
+                         entity_count, client='Self', chat_type=None,
                          final_entity='MessageEntityCustomEmoji'):
     """بلوک استاندارد [PREMIUM DEBUG] مطابق spec مالک."""
     emoji_list = '\n'.join(detected or []) or '-'
     ids = '\n'.join(str(value) for value in (document_ids or [])) or '-'
+    chat_line = f'\nChat Type: {chat_type}' if chat_type else ''
     return (
         '[PREMIUM DEBUG]\n'
         f'Client: {client}\n'
@@ -257,9 +259,38 @@ def format_premium_debug(*, method, chat_id, original_text, detected, document_i
         f'Original Text: {original_text}\n'
         f'Detected Emoji: {emoji_list}\n'
         f'Created Custom Emoji Entities: {entity_count}\n'
-        f'Document IDs: {ids}\n'
+        f'Document IDs: {ids}'
+        f'{chat_line}\n'
         f'Final Entity: {final_entity}'
     )
+
+
+def format_custom_emoji_debug(*, chat_type, emoji, document_id,
+                              entity_status='CREATED', send_status='SUCCESS',
+                              method=None):
+    """بلوک کوتاه [CustomEmoji] مطابق spec مالک:
+
+        [CustomEmoji]
+        Chat: Group
+        Emoji: 🔥
+        ID: 5796300821150833909
+        Entity: CREATED
+        Send: SUCCESS
+
+    چند ایموجی در یک بلوک می‌آیند (Emoji یک‌خطی، ID هر کدام یک خط).
+    """
+    if isinstance(emoji, (list, tuple)):
+        emoji = ' '.join(str(item) for item in emoji) or '-'
+    lines = ['[CustomEmoji]', f'Chat: {chat_type}', f'Emoji: {emoji or "-"}']
+    if isinstance(document_id, (list, tuple)):
+        lines.extend(f'ID: {value}' for value in document_id or ['-'])
+    else:
+        lines.append(f'ID: {document_id if document_id is not None else "-"}')
+    lines.append(f'Entity: {entity_status}')
+    lines.append(f'Send: {send_status}')
+    if method and method != 'send':
+        lines.append(f'Method: {method}')
+    return '\n'.join(lines)
 
 
 # ---------------------------------------------------------------- public API
@@ -330,6 +361,15 @@ def send_premium_event(title, fields=None, *, level='INFO', kind='converted',
 def send_premium_debug_block(block_text, *, chat_id=None):
     """بلوک [PREMIUM DEBUG] — محلی همیشه؛ تلگرام فقط در سطح DEBUG."""
     return send_premium_event(block_text, None, level='DEBUG', kind='debug',
+                              chat_id=chat_id)
+
+
+def send_custom_emoji_debug(block_text, *, chat_id=None):
+    """بلوک [CustomEmoji] — پرچم CUSTOM_EMOJI_DEBUG؛ محلی همیشه،
+    تلگرام فقط در سطح DEBUG (سپرده ضد-اسپم مستقل از [PREMIUM DEBUG])."""
+    if not getattr(config, 'CUSTOM_EMOJI_DEBUG', False):
+        return False
+    return send_premium_event(block_text, None, level='DEBUG', kind='custom_debug',
                               chat_id=chat_id)
 
 

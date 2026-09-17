@@ -1,17 +1,22 @@
-"""Smoke Test سه‌چته — مقایسه Runtime کانورتر در Saved / Private / Group.
+"""Smoke Test شش‌سناریو — راستی‌آزمایی کامل کانورتر در همه مسیرهای ارسال.
 
-هدف: اجرای دقیقاً همان سه تست spec مالک و کشف ROOT CAUSE اگر entity ساخته
-نشد. سه پیام «سلام 😂🔥❤️» به سه نوع چت ارسال می‌شود و برای هر چت گزارش
-می‌شود که آیا MessageEntityCustomEmoji واقعی ساخته شده یا نه؛ در صورت عدم
-تبدیل، علت دقیق همان لحظه (کدام شرط رد شده) هم به لاگ محلی و هم به ربات
-گزارش تلگرامی (ENV: PREMIUM_LOG_BOT_TOKEN) ارسال می‌شود.
+سناریوهای spec مالک (همه با متن «سلام 😂🔥❤️»):
+
+    1) Saved Messages (text)          2) Private Chat (text)
+    3) Group (text)                   4) Channel (text — تا جایی که MTProto اجازه دهد)
+    5) File Caption                   6) Reply Message
+
+برای هر سناریو گزارش می‌شود که آیا MessageEntityCustomEmoji واقعی روی پیام
+نشسته یا نه؛ در صورت عدم تبدیل، علت دقیق همان لحظه (کدام شرط رد شده) هم به
+لاگ محلی و هم به ربات گزارش تلگرامی (ENV: PREMIUM_LOG_BOT_TOKEN) می‌رود.
+هیچ prefix/ایموجی ثابتی به پیام اضافه نمی‌شود (سیستم Prefix حذف شده است).
 
 اجرا (روی سرور مالک، جایی که سشن معتبر وجود دارد):
 
     python -m tools.premium_emoji_debug_smoke --session '<STRING_SESSION>' \
-        --private <user_id> --group <group_id>
+        --private <user_id> --group <group_id> --channel <channel_id>
 
-    # بدون --private/--group فقط Saved Messages تست می‌شود.
+    # بدون هیچ id فقط سناریوهای Saved (text/caption/reply) اجرا می‌شوند.
     # توکن ربات گزارش فقط از ENV: PREMIUM_LOG_BOT_TOKEN
     # کانورتر باید برای این حساب روشن باشد (دکمه 🎨 Premium Emoji پنل).
 """
@@ -51,12 +56,27 @@ def _engine_state(engine):
     return 'ON' if config.PREMIUM_EMOJI_CONVERTER_ENABLED else 'OFF(config)'
 
 
-async def send_and_verify(client, engine, peer, label):
-    """ارسال پیام نمونه و راستی‌آزمایی entity های پیام ارسال‌شده."""
+async def send_and_verify(client, engine, peer, label, *, mode='text'):
+    """ارسال پیام نمونه و راستی‌آزمایی entity های پیام ارسال‌شده.
+
+    mode: 'text' | 'caption' | 'reply'
+    """
     result = {'label': label, 'chat': peer, 'sent': False, 'entities': 0,
               'doc_ids': [], 'state': _engine_state(engine), 'cause': None}
     try:
-        sent = await client.send_message(peer, TEST_TEXT, parse_mode=None)
+        if mode == 'caption':
+            # یک فایل کوچک درون‌حافظه‌ای؛ کپشن باید پرمیوم شود
+            import io
+            photo = io.BytesIO(b'\x89PNG\r\n\x1a\n' + b'0' * 64)
+            photo.name = 'smoke.png'
+            sent = await client.send_file(peer, photo, caption=TEST_TEXT,
+                                          parse_mode=None, force_document=False)
+        elif mode == 'reply':
+            base = await client.send_message(peer, 'پایه ریپلای', parse_mode=None)
+            sent = await client.send_message(peer, TEST_TEXT, reply_to=base.id,
+                                             parse_mode=None)
+        else:
+            sent = await client.send_message(peer, TEST_TEXT, parse_mode=None)
         result['sent'] = True
         result['message_id'] = getattr(sent, 'id', None)
         items = extract_custom_emojis(sent)
@@ -73,33 +93,34 @@ async def send_and_verify(client, engine, peer, label):
                 result['cause'] = 'mapping has no active ids for these emojis'
             else:
                 result['cause'] = ('entities dropped after conversion — '
-                                   'edit/update interference; see [PREMIUM DEBUG] log')
+                                   'server/update interference; see [PREMIUM DEBUG] log')
     except Exception as exc:  # noqa: BLE001
         result['cause'] = f'send failed: {type(exc).__name__}'
         tlog.send_error('❌ Premium Emoji Error',
                         {'File': 'tools/premium_emoji_debug_smoke.py',
-                         'Error': f'{type(exc).__name__}: {exc}'})
+                         'Error': f'{type(exc).__name__}: {exc}',
+                         'Scenario': label})
     return result
 
 
 def print_report(results):
-    print('\n================ PREMIUM EMOJI DEBUG SMOKE ================')
+    print('\n============ PREMIUM EMOJI DEBUG SMOKE (6 scenarios) ============')
     print(f'Text: {TEST_TEXT!r}')
-    header = f"{'Chat':<12}{'State':<12}{'Sent':<6}{'Entities':<9}{'Cause'}"
+    header = f"{'Scenario':<14}{'State':<12}{'Sent':<6}{'Entities':<9}{'Cause'}"
     print(header)
     print('-' * len(header))
     for row in results:
-        print(f"{row['label']:<12}{row['state']:<12}"
+        print(f"{row['label']:<14}{row['state']:<12}"
               f"{'✅' if row['sent'] else '❌':<6}{row['entities']:<9}"
               f"{row['cause'] or ('OK: MessageEntityCustomEmoji created ' + str(row['doc_ids']))}")
-    print('===========================================================')
+    print('=================================================================')
     ok = all(row['sent'] and row['entities'] == 3 for row in results)
-    print('VERDICT:', 'ALL CHATS CONVERTED ✅' if ok else
+    print('VERDICT:', 'ALL SCENARIOS CONVERTED ✅' if ok else
           'ROOT CAUSE FOUND — see Cause column + telegram log ❌')
     return ok
 
 
-async def run_with_session(session_string, private_id, group_id):
+async def run_with_session(session_string, private_id, group_id, channel_id):
     from telethon import TelegramClient, events
     from telethon.sessions import StringSession
 
@@ -114,7 +135,8 @@ async def run_with_session(session_string, private_id, group_id):
         return 1
     me = await client.get_me()
 
-    # همان نصب runtime سلف: prefix نمی‌خواهیم (مستقل است)، کانورتر + injector
+    # نصب runtime سلف: کانورتر (مسیر اصلی pre-send) + injector (fallback
+    # post-send برای پیام‌های گوشی). سیستم Prefix حذف شده است.
     engine = PremiumEmojiConverter(premium=getattr(me, 'premium', False),
                                    is_enabled=lambda: True)
     engine.owner_id = me.id
@@ -132,16 +154,25 @@ async def run_with_session(session_string, private_id, group_id):
 
     results = [await send_and_verify(client, engine, 'me', 'Saved')]
     await asyncio.sleep(2.0)
+    results.append(await send_and_verify(client, engine, 'me', 'Caption',
+                                         mode='caption'))
+    await asyncio.sleep(2.0)
+    results.append(await send_and_verify(client, engine, 'me', 'Reply',
+                                         mode='reply'))
+    await asyncio.sleep(2.0)
     if private_id:
         results.append(await send_and_verify(client, engine, int(private_id), 'Private'))
         await asyncio.sleep(2.0)
     if group_id:
         results.append(await send_and_verify(client, engine, int(group_id), 'Group'))
         await asyncio.sleep(2.0)
+    if channel_id:
+        results.append(await send_and_verify(client, engine, int(channel_id), 'Channel'))
+        await asyncio.sleep(2.0)
 
     ok = print_report(results)
     tlog.send_premium_event(
-        '🧪 Premium Emoji Debug Smoke — 3-Chat Comparison',
+        '🧪 Premium Emoji Debug Smoke — 6-Scenario Comparison',
         {'Account': me.id, 'Text': TEST_TEXT,
          'Results': ' | '.join(f"{r['label']}: entities={r['entities']} "
                                f"state={r['state']} cause={r['cause'] or 'OK'}"
@@ -158,6 +189,7 @@ def main():
                         help='StringSession پرمیوم مالک (یا ENV: PREMIUM_SMOKE_SESSION)')
     parser.add_argument('--private', default='', help='user_id چت خصوصی')
     parser.add_argument('--group', default='', help='chat_id گروه')
+    parser.add_argument('--channel', default='', help='channel_id کانال')
     args = parser.parse_args()
 
     # گارد آفلاین: موتور بدون نگاشتِ فعال چیزی نمی‌فرستد
@@ -167,10 +199,11 @@ def main():
 
     session = args.session or os.environ.get('PREMIUM_SMOKE_SESSION', '')
     if not session:
-        print('NO_SESSION — فقط بررسی آفلاین انجام شد؛ برای تست سه‌چته واقعی '
+        print('NO_SESSION — فقط بررسی آفلاین انجام شد؛ برای تست شش‌سناریو واقعی '
               '--session بدهید (روی سرور مالک).')
         return 0
-    return asyncio.run(run_with_session(session, args.private, args.group))
+    return asyncio.run(run_with_session(session, args.private, args.group,
+                                        args.channel))
 
 
 if __name__ == '__main__':

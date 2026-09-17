@@ -1,0 +1,58 @@
+PishroSelf v0.09.13 — PREMIUM_EMOJI_DEBUG_FINAL — Test Results
+Date: 2026-09-17 | Environment: Python 3.12.14 / Telethon 1.44.0 / pytest (offline, no network)
+
+============================================================
+SUITE
+============================================================
+Command : python -m pytest tests/ -q
+Result  : 753 passed / 6 failed
+Notes   :
+- هر ۶ خطا از قبل موجود و محیطی‌اند (test_admin_user_pagination,
+  test_hardening_v097 [نیاز به credentials واقعی کاربر در DATA_DIR],
+  test_memory_streaming_lock_pagination ×2, test_release_regression,
+  test_user_streaming) — هیچ‌کدام مرتبط با تغییرات Premium Emoji نیستند.
+- ۳۰ خطای setup قبلی (config ناقص sandbox) صفر شد: پرچم‌های
+  PREMIUM_EMOJI_DEBUG/CUSTOM_EMOJI_DEBUG/LOG_LEVEL/ADMIN_LOG_IDS به config
+  برگشتند.
+- tests/test_premium_emoji_prefix.py (قابلیت حذف‌شده) حذف شد.
+
+============================================================
+NEW: tests/test_premium_emoji_pipeline.py — 21 tests, ALL PASSED
+============================================================
+[6 scenarios of owner spec]
+  ✅ Saved Messages  — 3 entities {😂,🔥,❤️}, text intact, [CustomEmoji] Chat: Saved
+  ✅ Private Chat    — same, Chat: Private
+  ✅ Group           — same, Chat: Group
+  ✅ Channel         — same, Chat: Channel (MTProto limits respected)
+  ✅ File Caption    — SendMediaRequest caption converted + album captions per item
+  ✅ Reply Message   — reply_to → InputReplyToMessage, converted
+[guarantees]
+  ✅ UTF-16 offsets exactly on emoji positions
+  ✅ No prefix/placeholder/FALLBACK_DOCUMENT_ID in any runtime source (source scan)
+  ✅ Sent text == input text for all 4 chat types (no auto emoji ever)
+  ✅ Unmapped emoji → untouched, no crash
+  ✅ emoji_map.json loaded as default central map (map_source)
+  ✅ Broken/missing map file → builtin map, no crash
+  ✅ Flat format + invalid ids dropped safely
+  ✅ Post-send fallback (phone messages) → Send: EDITED, reason reported
+  ✅ Send failure → Send: FAILED in debug block
+  ✅ CUSTOM_EMOJI_DEBUG=False silences blocks
+  ✅ Token/session leak protection in debug blocks (redact)
+  ✅ Bot client fully untouched (no wrappers, no entities, no logs)
+  ✅ Config flags: PREMIUM_EMOJI_DEBUG/CUSTOM_EMOJI_DEBUG/LOG_LEVEL/ADMIN_LOG_IDS/OUTGOING_FIX
+
+============================================================
+REGRESSION FILES RE-VERIFIED (all passed)
+============================================================
+- tests/test_premium_emoji_converter.py (strict semantics, no generic fallback)
+- tests/test_premium_emoji_strict.py (alt-exact mapping, resolver, forbidden id)
+- tests/test_premium_emoji_debug_logging.py (30 tests: debug blocks, admin routing,
+  anti-spam, leak protection, rotation)
+- tests/test_storage_updates.py (legacy prefix keys ignored safely)
+
+============================================================
+OFFLINE TOOL CHECKS
+============================================================
+- python tools/export_emoji_map.py        → emoji_map.json (31 emojis) rebuilt OK
+- python -m tools.premium_emoji_debug_smoke → offline mapping check: 3 entities for
+  'سلام 😂🔥❤️' (live 6-scenario run requires owner session on their server)

@@ -12,19 +12,13 @@ Custom Emoji ایموجیِ دیگر تبدیل نمی‌شود.
 PREMIUM_EMOJI_RESOLVED_MAPPING.json کنار همین فایل و ابزار رسمی
 tools/resolve_premium_emoji_mapping.py نگهداری می‌شود.
 
-FALLBACK_DOCUMENT_ID (5938388342281343001): طبق resolve زنده، alt واقعی این
-شناسه «🙄» است؛ چون در فهرست ایموجی‌های هدف نیست، طبق قانون
-Strict به هیچ کلیدی از نگاشت مبدل منصوب نشده و به‌عنوان fallback عمومی
-استفاده نمی‌شود. این ثابت فقط برای سازگاری قابلیت مستقل Premium Prefix
-(PREMIUM_EMOJI_PREFIX_IDS در config) و رفتار قدیمی strict=False نگه داشته
-شده است.
+Fallback عمومی ممنوع (v0.09.13 DEBUG_FINAL): هیچ شناسه ثابتی برای «همه
+ایموجی‌ها» وجود ندارد؛ FALLBACK_DOCUMENT_ID و سیستم Prefix کاملاً حذف
+شدند. ایموجیِ بدون نگاشت دقیق همیشه دست‌نخورده می‌ماند.
 
 ساختار داده طبق قرارداد پروژه ثابت است: کلید ایموجی که alt تأییدشده ندارد
 لیست خالی دارد (غیرفعال) و در زمان اجرا دست‌نخورده می‌ماند.
 """
-
-# شناسه مالک — resolve زنده تلگرام: alt = «🙄» → برای مبدل reject شد.
-FALLBACK_DOCUMENT_ID = 5938388342281343001
 
 # منبع مجاز شناسه‌ها — هیچ منبع دیگری مجاز نیست.
 EMOJI_SOURCE = 'https://t.me/CustomEmojiPack'
