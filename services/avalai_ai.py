@@ -7,6 +7,8 @@ from typing import Any
 
 import aiohttp
 
+from services.ai_error_classifier import classify_provider_error
+
 from config import (
     AVALAI_API_KEY,
     AVALAI_BASE_URL,
@@ -102,8 +104,11 @@ async def chat_completion(
             async with session.post(url, headers=headers, json=payload) as response:
                 body = await response.text()
                 if response.status < 200 or response.status >= 300:
+                    _kind, _fa = classify_provider_error(
+                        _error_message(body, response.status), response.status
+                    )
                     raise AvalAIChatError(
-                        _error_message(body, response.status),
+                        _fa,
                         status_code=response.status,
                     )
     except AvalAIChatError:

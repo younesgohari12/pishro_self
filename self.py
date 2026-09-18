@@ -29,6 +29,7 @@ from config import (
     AVALAI_REQUEST_TIMEOUT,
     AVALAI_AUDIO_MAX_BYTES,
     AVALAI_TTS_MAX_CHARS,
+    STT_FALLBACK_PROVIDERS,
     UPLOAD_DIR,
     get_tehran_time,
     get_tehran_datetime
@@ -43,7 +44,8 @@ from handlers.translate import execute_translate_text
 from services.ai_assistant import split_telegram_text
 import ui
 from services.feature_flags import enabled, CRYPTO_DISABLED, TRANSLATE_DISABLED
-from avalai_audio import AvalAIError, transcribe_audio
+from avalai_audio import AvalAIError
+from services.stt_service import build_stt_chain, transcribe_with_fallback
 from tts.avalai_tts import TTSError, text_to_speech
 from services.deleted_handler import register_deleted_message_handlers
 from services.font_formatter import register_message_font_handler
@@ -1240,7 +1242,8 @@ async def _run_connected_self(client, me, uid, sid):
                 await _temp_message(
                     client,
                     event.chat_id,
-                    "❌ حجم فایل صوتی بیشتر از محدودیت 25MB سرویس AvalAI است."
+                    "❌ حجم فایل صوتی بیشتر از محدودیت "
+                    f"{AVALAI_AUDIO_MAX_BYTES // (1024 * 1024)}MB سرویس تبدیل صوت است."
                 )
                 return
             await event.delete()
@@ -1262,15 +1265,32 @@ async def _run_connected_self(client, me, uid, sid):
             if not downloaded or not os.path.isfile(temp_path):
                 raise RuntimeError("دانلود فایل صوتی از تلگرام انجام نشد.")
             if os.path.getsize(temp_path) > AVALAI_AUDIO_MAX_BYTES:
-                raise AvalAIError("حجم فایل صوتی بیشتر از محدودیت 25MB سرویس AvalAI است.")
+                raise AvalAIError(
+                    f"حجم فایل صوتی بیشتر از محدودیت "
+                    f"{AVALAI_AUDIO_MAX_BYTES // (1024 * 1024)}MB سرویس تبدیل صوت است."
+                )
             mime_type = getattr(file_info, 'mime_type', None)
-            transcript = await transcribe_audio(
+            chain = build_stt_chain(
+                AVALAI_API_KEY,
+                AVALAI_BASE_URL,
+                AVALAI_STT_MODEL,
+                STT_FALLBACK_PROVIDERS,
+            )
+            if not chain:
+                raise AvalAIError(
+                    "هیچ سرویس تبدیل صوتی پیکربندی نشده است؛ AVALAI_API_KEY را "
+                    "در کانفیگ وارد کن یا تأمین‌کننده پشتیبان را در "
+                    "STT_FALLBACK_PROVIDERS بگذار."
+                )
+            transcript, stt_provider = await transcribe_with_fallback(
                 temp_path,
-                api_key=AVALAI_API_KEY,
-                base_url=AVALAI_BASE_URL,
-                model=AVALAI_STT_MODEL,
+                chain=chain,
                 timeout_seconds=AVALAI_REQUEST_TIMEOUT,
                 mime_type=mime_type,
+            )
+            print(
+                f"[STT] provider={stt_provider} chat={event.chat_id} "
+                f"size={os.path.getsize(temp_path)}"
             )
             chunks = _split_plain_text(transcript)
             if not chunks:

@@ -380,4 +380,82 @@ async def test_avalai_http_error_is_wrapped(monkeypatch):
     with pytest.raises(avalai_ai.AvalAIChatError) as exc:
         await avalai_ai.chat_completion([{'role': 'user', 'content': 'x'}])
     assert exc.value.status_code == 429
-    assert 'rate limited' in str(exc.value)
+    # v0.09.19: خطاهای شناخته‌شده فارسی می‌شوند (طبقه‌بند مشترک)
+    assert 'محدودیت' in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_avalai_credit_error_shows_persian_message(monkeypatch):
+    """خطای اتمام اعتبار (402) باید فارسی و قابل‌فهم باشد، نه خام انگلیسی."""
+    from services import avalai_ai
+
+    class FakeResponse:
+        status = 402
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def text(self):
+            return ('{"error":{"message":"Your account credit has been '
+                    'exhausted. Please top up at https://ava.al/billing"}}')
+
+    class FakeSession:
+        def __init__(self, *, timeout):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        def post(self, *args, **kwargs):
+            return FakeResponse()
+
+    monkeypatch.setattr(avalai_ai, 'AVALAI_API_KEY', 'test-secret')
+    monkeypatch.setattr(avalai_ai.aiohttp, 'ClientSession', FakeSession)
+    with pytest.raises(avalai_ai.AvalAIChatError) as exc:
+        await avalai_ai.chat_completion([{'role': 'user', 'content': 'x'}])
+    assert exc.value.status_code == 402
+    assert 'اعتبار' in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_avalai_unknown_error_passes_through_raw(monkeypatch):
+    """سازگاری عقب: خطای ناشناخته مثل قبل همان متن خام را نشان می‌دهد."""
+    from services import avalai_ai
+
+    class FakeResponse:
+        status = 418
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def text(self):
+            return '{"error":{"message":"weird gateway said boom"}}'
+
+    class FakeSession:
+        def __init__(self, *, timeout):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        def post(self, *args, **kwargs):
+            return FakeResponse()
+
+    monkeypatch.setattr(avalai_ai, 'AVALAI_API_KEY', 'test-secret')
+    monkeypatch.setattr(avalai_ai.aiohttp, 'ClientSession', FakeSession)
+    with pytest.raises(avalai_ai.AvalAIChatError) as exc:
+        await avalai_ai.chat_completion([{'role': 'user', 'content': 'x'}])
+    assert exc.value.status_code == 418
+    assert 'weird gateway said boom' in str(exc.value)

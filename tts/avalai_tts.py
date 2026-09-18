@@ -14,6 +14,8 @@ from typing import Any
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 
+from services.ai_error_classifier import classify_provider_error
+
 from config import (
     AVALAI_API_KEY,
     AVALAI_BASE_URL,
@@ -51,6 +53,14 @@ def _real_api_error(exc: Exception) -> str:
         if body:
             return str(body)
     return str(exc)
+
+
+def _fa_provider_error(exc: Exception) -> str:
+    """خطای SDK را به پیام فارسی طبقه‌بندی‌شده تبدیل می‌کند (مثل اتمام اعتبار)."""
+    _kind, fa = classify_provider_error(
+        _real_api_error(exc), getattr(exc, "status_code", None)
+    )
+    return fa
 
 
 def _detect_language_code(text: str) -> str:
@@ -182,13 +192,13 @@ async def text_to_speech(text, user_id):
             output_path.unlink(missing_ok=True)
         except OSError:
             pass
-        raise TTSError(_real_api_error(exc)) from exc
+        raise TTSError(_fa_provider_error(exc)) from exc
     except Exception as exc:
         try:
             output_path.unlink(missing_ok=True)
         except OSError:
             pass
-        raise TTSError(_real_api_error(exc)) from exc
+        raise TTSError(_fa_provider_error(exc)) from exc
 
     if not output_path.is_file() or output_path.stat().st_size == 0:
         try:

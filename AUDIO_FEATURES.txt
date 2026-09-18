@@ -1,10 +1,13 @@
 قابلیت‌های صوتی AvalAI
 =====================
 
-STT:
-- API: AvalAI
-- Endpoint: /v1/audio/transcriptions
-- Model: gpt-transcribe
+STT (از v0.09.19 — زنجیره تأمین‌کننده):
+- سرویس مسئول: services/stt_service.py (fallback خودکار + مدارشکن + خطای فارسی)
+- اول زنجیره: AvalAI — Endpoint: /v1/audio/transcriptions — Model: AVALAI_STT_MODEL
+- پشتیبان‌ها: STT_FALLBACK_PROVIDERS در کانفیگ پایدار (OpenAI-compatible)
+  → راهنما: STT_FALLBACK_SETUP_FA.txt
+- خطاها: فارسی طبقه‌بندی‌شده (اعتبار/کلید/محدودیت/سرور/...) + راهنمای رفع
+- لاگ: [STT] provider=<label> chat=<chat_id> size=<bytes>
 
 TTS:
 - API: AvalAI ONLY
@@ -29,4 +32,4 @@ Voice styles:
 
 API errors are shown as:
 ❌ خطای ساخت صوت:
-<real API error>
+<پیام فارسی طبقه‌بندی‌شده؛ خطاهای ناشناخته مثل قبل خام نمایش داده می‌شوند>
