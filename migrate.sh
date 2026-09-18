@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
 #  PishroSelf — مهاجرت امن به معماری Loader (راه ۱) — migrate.sh
-#  نسخه: 1.0  |  تاریخ: 2026-09-18
+#  نسخه: 1.1  |  تاریخ: 2026-09-18 — رفع 203/EXEC: ExecStart از VENV_PY واقعی + گارد venv + Description خودکار + تأیید پایداری سرویس
 #
 #  کاری که می‌کند:
 #    سرویس selfbot را به نسخه جدید (با config بارگذار) سالم متصل می‌کند؛
@@ -598,6 +598,9 @@ step "گام ۵: venv و نصب requirements"
   else
     say "venv موجود است."
   fi
+  if [ "$DRY_RUN" != "1" ] && [ ! -x "$VENV_PY" ]; then
+    die "پایتون venv قابل اجرا نیست: $VENV_PY — venv ناقص یا خراب است (venv/ یا .venv/)."
+  fi
   if [ "$SKIP_PIP" = "1" ]; then say "[SKIP] نصب requirements رد شد (PISHRO_SKIP_PIP=1)"; return 0; fi
   if "$VENV_PY" -c 'import telethon, aiohttp' >/dev/null 2>&1; then
     say "✅ وابستگی‌ها از قبل نصب‌اند (telethon/aiohttp)."
@@ -612,19 +615,26 @@ step "گام ۵: venv و نصب requirements"
 # ----------------------------- systemd -----------------------------
 setup_systemd() {
 step "گام ۶: اصلاح مسیر سرویس systemd ($UNIT_FILE)"
+  if [ "$DRY_RUN" != "1" ]; then
+    [ -x "$VENV_PY" ] || die "پایتون venv پیدا نشد: $VENV_PY — unit با مسیر اجرایی خراب نوشته نمی‌شود (203/EXEC)."
+  fi
+  local app_ver desc
+  app_ver="$(grep -oE "APP_VERSION[[:space:]]*=[[:space:]]*'[^']+" "$TARGET_DIR/storage.py" 2>/dev/null | head -1 | sed "s/.*'//")"
+  desc="PishroSelf Telegram Selfbot"
+  [ -n "$app_ver" ] && desc="PishroSelf v${app_ver}"
   if [ ! -f "$UNIT_FILE" ]; then
     say "فایل unit وجود ندارد — ساخته می‌شود."
     if [ "$DRY_RUN" != "1" ]; then
       cat > "$UNIT_FILE" <<UNIT_EOF
 [Unit]
-Description=PishroSelf Telegram Selfbot
+Description=$desc
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 WorkingDirectory=$TARGET_DIR
-ExecStart=$TARGET_DIR/venv/bin/python main.py
+ExecStart=$VENV_PY main.py
 Restart=on-failure
 RestartSec=5
 
@@ -636,11 +646,15 @@ UNIT_EOF
     run cp -a "$UNIT_FILE" "$BACKUP_DIR/selfbot.service.bak"
     local args new_exec
     args="$(detect_exec_args)"
-    new_exec="$TARGET_DIR/venv/bin/python $args"
+    new_exec="$VENV_PY $args"
     say "ExecStart جدید: $new_exec"
     if [ "$DRY_RUN" != "1" ]; then
       sed -i "s|^WorkingDirectory=.*|WorkingDirectory=$TARGET_DIR|" "$UNIT_FILE"
       sed -i "s|^ExecStart=.*|ExecStart=$new_exec|" "$UNIT_FILE"
+      sed -i "s|^Description=.*|Description=$desc|" "$UNIT_FILE"
+      if ! grep -q '^Description=' "$UNIT_FILE"; then
+        sed -i "/^\[Unit\]/a Description=$desc" "$UNIT_FILE"
+      fi
       if ! grep -q '^WorkingDirectory=' "$UNIT_FILE"; then
         sed -i "/^\[Service\]/a WorkingDirectory=$TARGET_DIR" "$UNIT_FILE"
       fi
@@ -648,7 +662,7 @@ UNIT_EOF
         sed -i "/^\[Service\]/a ExecStart=$new_exec" "$UNIT_FILE"
       fi
       say "--- unit پس از تغییر (خطوط کلیدی) ---"
-      grep -E '^(WorkingDirectory|ExecStart|User|Environment)' "$UNIT_FILE" | while read -r line; do say "  $line"; done
+      grep -E '^(Description|WorkingDirectory|ExecStart|User|Environment)' "$UNIT_FILE" | while read -r line; do say "  $line"; done
     fi
     if grep -Eq '^User=' "$UNIT_FILE" && ! grep -Eq '^User=root' "$UNIT_FILE"; then
       warn "سرویس با کاربر غیر root تعریف شده (User=). مسیر دیتا از خانه همان کاربر حل می‌شود؛"
@@ -737,7 +751,18 @@ step "گام ۹: اجرای سرویس"
     rollback_unit
     die "سرویس جدید بالا نیامد — rollback انجام شد."
   fi
-  say "✅ سرویس active است."
+  # تأیید پایداری — پنجره‌ی گذرای active فریب‌نده است؛ 203/EXEC در کسری از ثانیه رخ می‌دهد
+  sleep 3
+  local pid_now=""
+  active="$("$SYSTEMCTL_BIN" is-active "$SERVICE_NAME" 2>/dev/null || true)"
+  pid_now="$("$SYSTEMCTL_BIN" show -p MainPID --value "$SERVICE_NAME" 2>/dev/null || true)"
+  if [ "$active" != "active" ] || [ -z "$pid_now" ] || [ "$pid_now" = "0" ]; then
+    warn "سرویس بعد از start پایدار نماند (ActiveState=$active MainPID=${pid_now:-0}) — آخرین لاگ‌ها:"
+    journalctl -u "$SERVICE_NAME" -n 40 --no-pager 2>/dev/null | tee -a "$REPORT_FILE" || true
+    rollback_unit
+    die "سرویس جدید پایدار نماند (الگوی 203/EXEC یا کرش حلقه‌ای) — rollback انجام شد."
+  fi
+  say "✅ سرویس active و پایدار است (MainPID=$pid_now)."
 
 step "گام ۱۰: لاگ ۱۰۰ خط آخر + راستی‌آزمایی"
   local journal_out
