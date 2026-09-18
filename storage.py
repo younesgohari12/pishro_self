@@ -19,7 +19,7 @@ import tempfile
 import uuid
 import zipfile
 
-APP_VERSION = '0.09.15'
+APP_VERSION = '0.09.16'
 STORAGE_FORMAT = 2
 READABLE_FORMATS = (1, 2)
 DATA_DIRS = ('db', 'sessions', 'banner', 'upload', 'message_cache')
