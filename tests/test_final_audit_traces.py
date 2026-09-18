@@ -439,3 +439,101 @@ def test_away_trace_independent_from_premium(clean_env):
     assert 'final_sender: client.send_message' in block
     # بدون کانورتر فعال هم پیام خام است (هیچ تبدیلی ممکن نبوده)
     assert client.sends[0][1] == 'الان نیستم 🔥'
+
+
+# ================================================== 5) تست runtime نهایی
+def test_runtime_contract_premium_and_away(clean_env, monkeypatch):
+    """تست runtime نهایی (دستور مالک — بدون هیچ قابلیت جدید):
+
+    Premium: ارسال پیام → بررسی:
+        delete=True / new_send=True / edit=False
+    Away: ارسال پیام عدم حضور → بررسی:
+        premium_entered=False / resend_entered=False
+    """
+    from telethon import functions as telethon_functions
+
+    monkeypatch.setattr(
+        'services.emoji_resend_manager.VERIFY_DELAY_SECONDS', 0.0)
+    premium_blocks = []
+    monkeypatch.setattr(tlog, 'send_premium_trace',
+                        lambda block, **kw:
+                        premium_blocks.append(block) or True)
+    away_blocks = []
+    monkeypatch.setattr(tlog, 'send_away_trace',
+                        lambda block, **kw:
+                        away_blocks.append(block) or True)
+
+    client = ResendClient()
+    build_full_pipeline(client)
+
+    # ثبت‌کننده runtime برای edit: اگر هر مرحله‌ای edit_message را صدا
+    # بزند اینجا ثبت می‌شود؛ قرارداد نهایی یعنی این لیست باید خالی بماند.
+    edit_calls = []
+
+    async def _edit_recorder(*a, **k):
+        edit_calls.append((a, k))
+        return NS(id=0)
+
+    client.edit_message = _edit_recorder
+
+    # ---------------------------------------------- Premium: ارسال پیام
+    run(client.send_message(CHAT_B, 'موفق شد 🔥'))
+    sent_view = NS(id=701, chat_id=CHAT_B, message='موفق شد 🔥',
+                   entities=[], media=None, reply_to=None, silent=False)
+    client.server[701] = sent_view                     # سرور: بدون entity
+    sent = make_sent_message(client, CHAT_B, 'موفق شد 🔥')
+    run(client.handler_of('_outgoing_premium_fix')(outgoing_event(sent)))
+
+    # delete=True — حذف واقعی پیام اصلی انجام شد
+    assert client.deleted == [701]
+    # new_send=True — پیام «جدید» با Custom Emoji Entity ارسال شد
+    resend_sends = [s for s in client.sends if s[1] == 'موفق شد 🔥'][1:]
+    assert resend_sends and resend_sends[0][3]
+    # edit=False — نه client.edit_message و نه EditMessageRequest در
+    # جریان Premium Resend صادر نشد
+    assert edit_calls == []
+    assert not [r for _t, r in client.network
+                if isinstance(r,
+                              telethon_functions.messages.EditMessageRequest)]
+    # Trace هم همان قرارداد را تأیید می‌کند
+    assert len(premium_blocks) == 1
+    pblock = premium_blocks[0]
+    assert 'is_away: خیر' in pblock
+    assert 'delete_called: بله' in pblock
+    assert 'new_send_called: بله' in pblock
+
+    # ---------------------------------------------- Away: پیام عدم حضور
+    away_service.set_enabled(UID, True)
+    away_service.set_text(UID, 'الان نیستم 🔥')
+    run(client.handler_of('_away_incoming_handler')(
+        incoming_event(sender_id=CHAT_A, msg_id=10)))
+
+    assert len(away_blocks) == 1
+    ablock = away_blocks[0]
+    assert ablock.startswith('[AWAY_TRACE]\n\n')
+    # premium_entered=False / resend_entered=False — هم در بلوک Trace
+    assert 'premium_pipeline_entered: خیر — هرگز' in ablock
+    assert 'resend_entered: خیر — هرگز' in ablock
+    # هم در record runtime (حالت بولی واقعی، نه فقط متن)
+    record = next(iter(away_bypass._TRACES.values()))
+    assert record['premium_pipeline_entered'] is False
+    assert record['resend_entered'] is False
+    # پیام عدم حضور خام ارسال شد — بدون هیچ Entity (گارد کانورتر)
+    away_sends = [s for s in client.sends if s[1] == 'الان نیستم 🔥']
+    assert away_sends and not away_sends[0][3]
+
+    # رویداد outgoing پیام Away هم به Resend می‌رسد — و بدون اقدام رد می‌شود
+    away_sent = make_sent_message(client, CHAT_A, 'الان نیستم 🔥')
+    run(client.handler_of('_outgoing_premium_fix')(outgoing_event(away_sent)))
+    assert record['resend_entered'] is False
+    assert 'بدون هیچ اقدامی رد کرد' in (record['resend_note'] or '')
+    # از سمت Premium هم ثبت شد: is_away=بله، بدون Delete و بدون New Send
+    assert len(premium_blocks) == 2
+    assert 'is_away: بله' in premium_blocks[1]
+    assert 'delete_called: خیر' in premium_blocks[1]
+    assert 'new_send_called: خیر' in premium_blocks[1]
+    # هیچ حذف/ارسال جدیدی برای پیام Away رخ نداد
+    assert client.deleted == [701]                     # فقط حذفِ Premium
+    assert len(away_sends) == 1                        # ارسال جدیدی نیست
+    # edit در کل سناریو (Premium + Away) صفر ماند
+    assert edit_calls == []

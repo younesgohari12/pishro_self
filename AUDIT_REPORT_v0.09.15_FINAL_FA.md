@@ -426,8 +426,11 @@ new_send_called: بله
 - ماژول قدیمی `premium_emoji_injector.py` (که `edit_message` را هم wrap می‌کند)
   **فقط در تست‌ها** استفاده می‌شود و در `self.py` نصب **نمی‌شود** — در production
   بی‌اثر است (تأیید با جستجوی install).
-- `EditMessageRequest` در کل کد runtime سیستم پریمیوم **صفر** است (فقط در
-  تست‌ها به‌عنوان «ممنوعیت» assert می‌شود و در کامنت‌ها ذکر می‌شود).
+- عبارت صحیح و نهایی (اصلاح‌شده طبق دستور مالک): **«هیچ `EditMessageRequest`
+  در جریان Premium Resend وجود ندارد»** — یعنی دامنه این ادعا فقط جریان
+  ارسال دوباره ایموجی ویژه است، نه کل سیستم. در `tests/test_final_audit_traces.py`
+  یک تست runtime این ادعا را به‌صورت زنده تأیید می‌کند
+  (`delete=True, new_send=True, edit=False`).
 
 ---
 
@@ -475,7 +478,7 @@ new_send_called: بله
 
 ## ۶) تست‌ها
 
-فایل جدید: `tests/test_final_audit_traces.py` (۹ تست، همه پاس):
+فایل: `tests/test_final_audit_traces.py` (۱۰ تست، همه پاس):
 
 1. فرمت دقیق `[AWAY_TRACE]` — ۶ فیلد spec + خط خالی + مقادیر فارسی + حالت ناموفق.
 2. فرمت دقیق `[PREMIUM_TRACE]` — ۵ فیلد spec + خط خالی + هر دو حالت is_away.
@@ -486,9 +489,14 @@ new_send_called: بله
 7. `[PREMIUM_TRACE]` Entity سالم سرور: هر دو اقدام خیر.
 8. ماتریس واقعی Chat A/B با Trace: A اول → یک Trace | A دوم → Trace جدید نیست | B اول → Trace مستقل.
 9. استقلال کامل: حذف پریمیوم → AWAY_TRACE همچنان صادر می‌شود.
+10. **تست runtime نهایی (دستور مالک):** Premium: ارسال پیام → `delete=True`,
+    `new_send=True`, `edit=False` (با ثبت‌کننده `client.edit_message` + بررسی
+    `EditMessageRequest` در سطح شبکه) | Away: ارسال پیام عدم حضور →
+    `premium_entered=False`, `resend_entered=False` (در بلوک Trace و در record
+    runtime) + رد شدن پیام Away از Resend بدون هیچ اقدامی.
 
-نتیجه کل مجموعه: **۸۶۸ پاس / ۲۳ شکست** — دقیقاً برابر baseline قبل از Audit
-(۸۵۹ پاس + ۹ تست جدید؛ همان ۲۳ شکست قدیمیِ نامرتبط: transfer/flags/translation/
+نتیجه کل مجموعه: **۸۶۹ پاس / ۲۳ شکست** — دقیقاً برابر baseline قبل از Audit
+(۸۵۹ پاس + ۱۰ تست جدید؛ همان ۲۳ شکست قدیمیِ نامرتبط: transfer/flags/translation/
 storage/streaming) → **صفر رگرسیون**.
 
 ---
