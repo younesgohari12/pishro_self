@@ -152,9 +152,27 @@ class AdminController:
             'last_activity': p.get('last_activity') or '-',
         }
 
-    def render_user_detail(self, user_id: int):
+    def _user_label(self, user_id: int) -> str:
+        """برچسب امن نمایشی کاربر برای متن پیام‌ها (همیشه بدون رکورد هم کار می‌کند)."""
         p = self._profile(user_id)
-        tr = trial_manager.refresh(user_id)
+        if p.get('username'):
+            return f"@{escape_md(p['username'])} (`{int(user_id)}`)"
+        if p.get('first_name'):
+            return f"**{escape_md(p['first_name'])}** (`{int(user_id)}`)"
+        return f"`{int(user_id)}`"
+
+    def render_user_detail(self, user_id: int):
+        """نمای واحد و کامل کاربر در بخش کاربران.
+
+        ریشه‌ای: این نما تنها مسیر مدیریت کاربر از پنل است و باید همیشه رندر شود —
+        حتی اگر کاربر هنوز رکورد کیف پول SQLite نداشته باشد (موجودی از لایه db
+        خوانده می‌شود که خودش SQLite را روی JSON پوشش می‌دهد).
+        دکمه‌های افزایش/کاهش موجودی، بن/آن‌بن و مدیریت تست همه از همین‌جا در دسترس‌اند.
+        """
+        uid = int(user_id)
+        p = self._profile(uid)
+        wallet = models.get_user_details(uid) or {}
+        tr = trial_manager.refresh(uid)
         if tr and int(tr.get('active') or 0):
             trial_status = '🟢 فعال'
             expiry = tr.get('expire_time') or '-'
@@ -165,24 +183,36 @@ class AdminController:
             trial_status = '🔴 استفاده نشده'
             expiry = '-'
         uname = f"@{escape_md(p['username'])}" if p['username'] else 'ندارد'
+        name = ((p.get('first_name') or '-') + ' ' + (p.get('last_name') or '')).strip()
+        diamonds = int(db.get_user_settings(uid).get('diamonds', 0) or 0)
+        referrals = int(wallet.get('referral_count') or 0)
+        banned = bool(int(wallet.get('banned') or 0))
+        status = '🚫 بن شده' if banned else '🟢 فعال'
         text = (
             '👤 **اطلاعات کاربر**\n\n'
-            f"ID: `{user_id}`\n"
-            f"Username: `{escape_md(uname)}`\n"
-            f"نام: **{escape_md(p['first_name'] or '-')} {escape_md(p['last_name'] or '')}**\n"
-            f"تاریخ عضویت: `{escape_md(p['registered_at'])}`\n"
+            f"ID: `{uid}`\n"
+            f"Username: `{uname}`\n"
+            f"نام: **{escape_md(name)}**\n"
+            f"تاریخ عضویت: `{escape_md(p.get('registered_at') or '-')}`\n"
+            f"آخرین فعالیت: `{escape_md(p.get('last_activity') or '-')}`\n"
             f"وضعیت Trial: **{trial_status}**\n"
             f"زمان انقضا: `{escape_md(expiry)}`\n"
-            f"آخرین فعالیت: `{escape_md(p['last_activity'])}`\n"
-            f"تعداد تیکت‌ها: **{models.ticket_count_for_user(user_id)}**\n"
-            f"💎 موجودی: **{int(db.get_user_settings(user_id).get('diamonds', 0))} الماس**"
+            f"تعداد تیکت‌ها: **{models.ticket_count_for_user(uid)}**\n"
+            f"👥 رفرال: **{referrals}**\n"
+            f"💎 موجودی: **{diamonds} الماس**\n"
+            f"وضعیت حساب: **{status}**"
         )
+        if banned:
+            ban_row = [ui.inline_button('✅ آن‌بن کاربر', f'adm2_user_unban_{uid}', 'success')]
+        else:
+            ban_row = [ui.inline_button('🚫 بن کردن کاربر', f'adm2_user_ban_{uid}', 'danger')]
         buttons = [
             [
-                ui.inline_button('➕ الماس', f'adm2_uplus_{user_id}', 'success'),
-                ui.inline_button('➖ الماس', f'adm2_uminus_{user_id}', 'danger'),
+                ui.inline_button('➕ افزایش موجودی', f'adm2_uplus_{uid}', 'success'),
+                ui.inline_button('➖ کاهش موجودی', f'adm2_uminus_{uid}', 'danger'),
             ],
-            [ui.inline_button('🎁 مدیریت تست این کاربر', f'adm2_trialuser_{user_id}', 'success')],
+            ban_row,
+            [ui.inline_button('🎁 مدیریت تست این کاربر', f'adm2_trialuser_{uid}', 'success')],
             [ui.inline_button('↩️ کاربران', b'adm2_users', 'secondary')],
         ]
         return text, buttons
@@ -220,28 +250,12 @@ class AdminController:
         return text, buttons
 
     def render_user_management_detail(self, user_id: int):
-        row = models.get_user_details(user_id)
-        if not row:
-            return '❌ کاربر پیدا نشد.', [[ui.inline_button('↩️ کاربران', b'adm2_users', 'secondary')]]
-        status = '🚫 بن شده' if int(row.get('banned') or 0) else 'فعال'
-        uname = ('@' + row.get('username')) if row.get('username') else '-'
-        name = ((row.get('first_name') or '') + ' ' + (row.get('last_name') or '')).strip() or '-'
-        text = (
-            '👤 **اطلاعات کاربر**\n\n'
-            f"ID: `{row['telegram_id']}`\n"
-            f"Username: `{escape_md(uname)}`\n"
-            f"Name: **{escape_md(name)}**\n\n"
-            f"💎 Diamond: **{int(row.get('diamonds') or 0)}**\n"
-            f"👥 Referral: **{int(row.get('referral_count') or 0)}**\n"
-            f"📅 Created: `{row.get('created_at') or '-'}`\n\n"
-            f"Status: **{status}**"
-        )
-        if int(row.get('banned') or 0):
-            buttons = [[ui.inline_button('✅ آن بن', f'adm2_user_unban_{user_id}', 'success')]]
-        else:
-            buttons = [[ui.inline_button('🚫 بن کردن', f'adm2_user_ban_{user_id}', 'danger')]]
-        buttons.append([ui.inline_button('↩️ کاربران', b'adm2_users', 'secondary')])
-        return text, buttons
+        """سازگاری عقب: نمای مدیریت کاربر اکنون همان نمای واحد کامل است.
+
+        قبلاً این نما به رکورد کیف پول SQLite وابسته بود و برای کاربر بدون رکورد
+        «کاربر پیدا نشد» برمی‌گرداند؛ اکنون نمای واحد همیشه رندر می‌شود.
+        """
+        return self.render_user_detail(user_id)
 
     def render_tickets(self):
         rows = models.list_tickets(limit=40)
@@ -461,10 +475,38 @@ class AdminController:
             delta = 1 if data.startswith('adm2_uplus_') else -1
             self._set_state(uid, {'step':'USER_BALANCE_AMOUNT','target':target,'delta':delta})
             action = 'افزایش' if delta > 0 else 'کاهش'
+            sign = '+' if delta > 0 else '-'
+            current = int(db.get_user_settings(target).get('diamonds', 0) or 0)
+            preset_rows = [
+                [ui.inline_button(f'{sign}{amt}', f'adm2_uquick_{delta}_{amt}_{target}', 'primary', icon=False)
+                 for amt in (10, 50, 100)],
+                [ui.inline_button(f'{sign}{amt}', f'adm2_uquick_{delta}_{amt}_{target}', 'primary', icon=False)
+                 for amt in (500, 1000)],
+            ]
             await event.edit(
-                f'💎 **{action} موجودی کاربر**\n\nکاربر: `{target}`\nمقدار الماس را ارسال کنید:',
-                buttons=[[ui.inline_button('❌ لغو', f'adm2_user_{target}', 'danger')]], parse_mode='md'
+                f'💎 **{action} موجودی کاربر**\n\n'
+                f'کاربر: {self._user_label(target)}\n'
+                f'موجودی فعلی: **{current} الماس**\n\n'
+                'مقدار الماس را ارسال کنید یا یکی از مقادیر پیشنهادی را انتخاب کنید:',
+                buttons=preset_rows + [[ui.inline_button('❌ لغو', f'adm2_user_{target}', 'danger')]],
+                parse_mode='md'
             ); return True
+
+        if data.startswith('adm2_uquick_'):
+            if not self._allowed(uid, 'manage_users', username): return await self._deny(event)
+            try:
+                _, _, delta_s, amount_s, target_s = data.split('_', 4)
+                delta, amount, target = int(delta_s), int(amount_s), int(target_s)
+            except Exception:
+                await event.answer('دادهٔ دکمه نامعتبر است.', alert=True); return True
+            if delta not in (1, -1) or amount <= 0:
+                await event.answer('مقدار نامعتبر است.', alert=True); return True
+            try:
+                await event.answer()
+            except Exception:
+                pass
+            await self._adjust_user_balance(event, uid, target, delta, amount)
+            return True
 
         if data == 'adm2_tickets':
             if not admin_manager.can_any(uid, ('answer_tickets','manage_tickets'), username): return await self._deny(event)
@@ -584,6 +626,51 @@ class AdminController:
         await event.answer('⛔️ این دسترسی برای شما فعال نیست.', alert=True)
         return True
 
+    async def _adjust_user_balance(self, event, uid: int, target: int, delta: int, amount: int):
+        """مسیر واحد تغییر موجودی کاربر (ورود دستی + دکمه‌های سریع).
+
+        تغییر از لایه رسمی balance_service.admin_adjust انجام می‌شود (دفتر کل
+        append-only)؛ هشدار موجودی کاربر موقتاً خاموش و کاربر و مدیر مطلع می‌شوند
+        و در پایان نمای تازهٔ کاربر بازگشت داده می‌شود.
+        """
+        target = int(target)
+        delta = 1 if int(delta) > 0 else -1
+        amount = int(amount)
+        if amount <= 0:
+            await event.reply('❌ مقدار باید عدد مثبت باشد.')
+            return
+        before = int(db.get_user_settings(target).get('diamonds', 0) or 0)
+        from services.balance_service import admin_adjust
+        try:
+            after = admin_adjust(target, delta * amount, floor_zero=True, description='Admin user adjustment')
+        except ValueError:
+            await event.reply('❌ تغییر موجودی انجام نشد؛ مقدار درخواستی با موجودی فعلی سازگار نیست.')
+            return
+        db.update_user_settings(target, {'last_alert_hours': 9999})
+        st = self._get_state(uid)
+        if st and st.get('step') == 'USER_BALANCE_AMOUNT' and int(st.get('target') or 0) == target:
+            self._clear_state(uid)
+        await event.reply(
+            f'✅ موجودی کاربر {self._user_label(target)} تغییر کرد.\n'
+            f'قبل: **{before}** | بعد: **{after}** الماس',
+            parse_mode='md'
+        )
+        try:
+            if delta * amount > 0:
+                await self.bot.send_message(
+                    target,
+                    f'💎 تعداد {amount} الماس به حساب شما اضافه شد.\n\nموجودی فعلی:\n{after} 💎'
+                )
+            else:
+                await self.bot.send_message(
+                    target,
+                    f'💎 تعداد {amount} الماس از حساب شما کسر شد.\n\nموجودی فعلی:\n{after} 💎'
+                )
+        except Exception:
+            pass
+        text2, buttons = self.render_user_detail(target)
+        await self.bot.send_message(event.chat_id, text2, buttons=buttons, parse_mode='md')
+
     async def handle_emoji_curation(self, event) -> bool:
         text = (event.raw_text or '').strip()
         parts = text.split()
@@ -647,10 +734,21 @@ class AdminController:
                 self._clear_state(uid); return False
             rows = models.search_users(text)
             self._clear_state(uid)
-            if not rows:
+            target = None
+            if rows:
+                target = int(rows[0]['telegram_id'])
+            else:
+                # ریشه‌ای: کاربر ممکن است هنوز رکورد کیف پول نداشته باشد؛
+                # از مسیر حل هویت (ID عددی / یوزرنیم / تلگرام) جستجو را کامل کن.
+                try:
+                    resolved = await self.resolve_user(text)
+                except Exception:
+                    resolved = None
+                if resolved:
+                    target = int(resolved)
+            if not target:
                 await event.reply('❌ کاربری پیدا نشد.'); return True
-            target=int(rows[0]['telegram_id'])
-            text2, buttons = self.render_user_management_detail(target)
+            text2, buttons = self.render_user_detail(target)
             await event.reply(text2, buttons=buttons, parse_mode='md'); return True
 
         if step == 'USER_BALANCE_AMOUNT':
@@ -658,27 +756,17 @@ class AdminController:
             clean = text.replace(',', '').strip()
             if not clean.isdigit() or int(clean) <= 0:
                 await event.reply('❌ مقدار باید عدد مثبت باشد.'); return True
-            amount = int(clean); target = int(st['target']); delta = int(st['delta'])
-            settings = db.get_user_settings(target); before = int(settings.get('diamonds',0))
-            from services.balance_service import admin_adjust
-            after = admin_adjust(target, delta * amount, floor_zero=True, description='Admin user adjustment')
-            db.update_user_settings(target, {'last_alert_hours': 9999})
-            self._clear_state(uid)
-            await event.reply(f'✅ موجودی کاربر `{target}` تغییر کرد.\nقبل: **{before}** | بعد: **{after}** الماس', parse_mode='md')
             try:
-                if delta * amount > 0:
-                    await self.bot.send_message(
-                        target,
-                        f'💎 تعداد {amount} الماس به حساب شما اضافه شد.\n\nموجودی فعلی:\n{after} 💎'
-                    )
-                else:
-                    await self.bot.send_message(
-                        target,
-                        f'💎 تعداد {amount} الماس از حساب شما کسر شد.\n\nموجودی فعلی:\n{after} 💎'
-                    )
+                target = int(st.get('target') or 0)
+                delta = int(st.get('delta') or 0)
             except Exception:
-                pass
-            text2,buttons=self.render_user_detail(target); await self.bot.send_message(event.chat_id,text2,buttons=buttons,parse_mode='md'); return True
+                target, delta = 0, 0
+            if target <= 0 or delta not in (1, -1):
+                self._clear_state(uid)
+                await event.reply('❌ نشست منقضی شده است. از بخش کاربران دوباره شروع کنید.')
+                return True
+            await self._adjust_user_balance(event, uid, target, delta, int(clean))
+            return True
 
         if step == 'TICKET_REPLY':
             if not self._allowed(uid, 'answer_tickets', username): self._clear_state(uid); return False

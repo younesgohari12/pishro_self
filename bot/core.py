@@ -329,6 +329,7 @@ def render_admin_menu():
             ui.inline_button("💎 موجودی کاربران", b"adm_bal", "primary"),
             ui.inline_button("📣 پیام همگانی", b"adm_bc", "success"),
         ],
+        [ui.inline_button("👥 بخش کاربران", b"adm2_users", "primary")],
         [
             ui.inline_button("🧾 درخواست‌ها", b"adm_pending", "primary"),
             ui.inline_button("📊 آمار ربات", b"adm_stats", "primary"),
