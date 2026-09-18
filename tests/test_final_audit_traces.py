@@ -312,7 +312,7 @@ def test_premium_trace_away_skip_is_unconditional(clean_env, monkeypatch):
 def test_premium_trace_full_resend_actions(clean_env, monkeypatch):
     """جریان کامل Resend: entity_check انجام شد، Delete بله، New Send بله."""
     monkeypatch.setattr(
-        'services.emoji_resend_manager.VERIFY_DELAY_SECONDS', 0.0)
+        'services.premium_resend_service.VERIFY_DELAY_SECONDS', 0.0)
     premium_blocks = []
     monkeypatch.setattr(tlog, 'send_premium_trace',
                         lambda block, **kw:
@@ -350,7 +350,7 @@ def test_premium_trace_no_action_when_server_entity_exists(clean_env,
     """Entity سالم روی سرور → فقط بررسی؛ Delete/New Send هرگز خیر."""
     from telethon import types as telethon_types
     monkeypatch.setattr(
-        'services.emoji_resend_manager.VERIFY_DELAY_SECONDS', 0.0)
+        'services.premium_resend_service.VERIFY_DELAY_SECONDS', 0.0)
     premium_blocks = []
     monkeypatch.setattr(tlog, 'send_premium_trace',
                         lambda block, **kw:
@@ -453,7 +453,7 @@ def test_runtime_contract_premium_and_away(clean_env, monkeypatch):
     from telethon import functions as telethon_functions
 
     monkeypatch.setattr(
-        'services.emoji_resend_manager.VERIFY_DELAY_SECONDS', 0.0)
+        'services.premium_resend_service.VERIFY_DELAY_SECONDS', 0.0)
     premium_blocks = []
     monkeypatch.setattr(tlog, 'send_premium_trace',
                         lambda block, **kw:

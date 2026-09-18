@@ -389,6 +389,39 @@ def format_premium_resend_debug(*, chat, message_id, deleted, resent,
     return '\n'.join(lines)
 
 
+def format_premium_resend_block(*, chat_id, message_id, emoji_detected,
+                                emoji_type='none', media_type='متن',
+                                resend_success=False, direction='outgoing',
+                                note=None):
+    """بلوک استاندارد [PREMIUM_RESEND] — spec مالک v0.09.18:
+
+        [PREMIUM_RESEND]
+        chat_id=...
+        message_id=...
+        emoji_detected=true
+        emoji_type=custom/unicode
+        media_type=...
+        direction=outgoing|incoming
+        resend_success=true
+
+    ``emoji_type`` یکی از: unicode / custom / none
+    ``note`` اختیاری است (توضیح کوتاه تصمیم/شکست).
+    """
+    lines = [
+        '[PREMIUM_RESEND]',
+        f'chat_id={chat_id}',
+        f'message_id={message_id}',
+        f'emoji_detected={"true" if emoji_detected else "false"}',
+        f'emoji_type={emoji_type}',
+        f'media_type={media_type}',
+        f'direction={direction}',
+        f'resend_success={"true" if resend_success else "false"}',
+    ]
+    if note:
+        lines.append(f'note={note}')
+    return '\n'.join(lines)
+
+
 def format_away_debug(*, chat_id, status, result):
     """بلوک استاندارد [پیام عدم حضور] مطابق spec مالک:
 
@@ -624,6 +657,28 @@ def send_premium_resend_debug(block_text, *, chat_id=None):
     if not _anti_spam_ok('resend_debug', time.monotonic()):
         return False
     _enqueue(text + _suppressed_suffix('resend_debug'), _chat_ids(chat_id))
+    return True
+
+
+def send_premium_resend_block(block_text, *, chat_id=None):
+    """بلوک [PREMIUM_RESEND] — لاگ محلی همیشه؛ تلگرام با پرچم + کانال Premium.
+
+    اسلات ضد-اسپم مستقل (premium_resend_block) تا کنار بلوک‌های فارسی
+    سرکوب نشود.
+    """
+    text = redact(block_text)
+    _premium_file_log.info('%s', text)
+    if not getattr(config, 'PREMIUM_EMOJI_RESEND_DEBUG', True):
+        return False
+    channel = getattr(config, 'PREMIUM_EMOJI_LOG_LEVEL', 'INFO')
+    if not _channel_enabled('INFO', channel):
+        return False
+    if not logging_enabled():
+        return False
+    if not _anti_spam_ok('premium_resend_block', time.monotonic()):
+        return False
+    _enqueue(text + _suppressed_suffix('premium_resend_block'),
+             _chat_ids(chat_id))
     return True
 
 

@@ -8,8 +8,9 @@
     پیام اول حذف شده + پیام دوم ایجاد شده + Custom Emoji فعال
 
 🔴 قاعده مالک: هیچ EditMessageRequest و هیچ edit_message ای در کل جریان
-مجاز نیست. ترتیب الزامی: کپی محتوا → حذف پیام اصلی → ارسال پیام جدید.
-اگر حذف شکست بخورد، نسخه جدید ارسال نمی‌شود (هیچ‌گاه دو نسخه نمی‌ماند).
+مجاز نیست. ترتیب الزامی (spec v0.09.18): کپی محتوا → ارسال پیام جدید →
+بعد از موفقیتِ ارسال، حذف پیام اصلی. اگر ارسال شکست بخورد، پیام اصلی
+باقی می‌ماند (هیچ حذفی قبل از موفقیتِ ارسال انجام نمی‌شود).
 """
 import asyncio
 import copy
@@ -24,6 +25,7 @@ import config
 import premium_emoji_mapping as mapping_module
 from services import premium_emoji_converter as mod
 from services import emoji_resend_manager as rmod
+from services import premium_resend_service as rsvc
 from services import telegram_logger as tlog
 
 NOW = datetime(2026, 9, 17, tzinfo=timezone.utc)
@@ -132,7 +134,7 @@ def custom_ids(entities):
 
 @pytest.fixture(autouse=True)
 def _fast(monkeypatch):
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
+    monkeypatch.setattr(rsvc, 'VERIFY_DELAY_SECONDS', 0.0)
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
 
 
@@ -170,7 +172,7 @@ def test_1_text_message_delete_then_new_send(monkeypatch):
     message = make_message('🔥 تست', msg_id=10)
     verdict = run(manager.handle_outgoing(message))
     assert verdict == 'handled'
-    # ترتیب الزامی: حذف قبل از ارسال
+    # حذف اصل بعد از موفقیتِ ارسال نسخه جدید (spec v0.09.18)
     assert len(client.deleted) == 1
     assert client.deleted == [(CHAT_ID, [10])]
     assert len(client.sends) == 1
@@ -229,7 +231,7 @@ def test_4_video_with_caption_delete_then_new_send(monkeypatch):
 def test_5_album_delete_then_new_send_as_one_album(monkeypatch):
     """۵) آلبوم: کل آلبوم یک‌بار حذف و یک‌بار ارسال می‌شود."""
     manager, client, _ = make_manager()
-    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rsvc, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
     grouped = 'album-1'
     part1 = make_message('🔥 کپشن آلبوم', msg_id=50, media=NS(m='p1'),
                          grouped_id=grouped, reply_to=7)
@@ -314,20 +316,26 @@ def test_skip_forward_via_bot_and_action(monkeypatch):
 
 
 # ================================================== failure safety
-def test_no_new_send_when_delete_fails(monkeypatch):
-    """حذف شکست بخورد → نسخه جدید هرگز ارسال نمی‌شود (بدون پیام تکراری)."""
+def test_delete_failure_after_resend_keeps_content(monkeypatch):
+    """حذف بعد از ارسال موفق شکست بخورد → نسخه جدید هست؛ اصل باقی می‌ماند.
+
+    spec v0.09.18: هیچ حذفی قبل از موفقیتِ ارسال انجام نمی‌شود؛ پس حذفِ
+    ناموفق فقط یعنی «موقتاً دو نسخه» — محتوا هرگز گم نمی‌شود و خطا log می‌شود.
+    """
     manager, client, _ = make_manager()
     client.delete_error = RuntimeError('no rights')
     message = make_message('🔥 مهم', msg_id=31)
     verdict = run(manager.handle_outgoing(message))
-    assert verdict == 'skipped'
-    assert client.sends == []        # هیچ نسخه جدیدی ارسال نشد
-    assert manager.stats['kept'] == 1  # پیام اصلی باقی ماند
+    assert verdict == 'handled'
+    assert len(client.sends) == 1      # نسخه جدید ارسال شد (اولویت: حفظ محتوا)
+    assert client.deleted == []        # حذف اصل ناموفق ماند
+    assert manager.stats['resent'] == 1
+    assert manager.stats['kept'] == 1  # پیام اصلی هم باقی ماند (گزارش شد)
 
 
 def test_send_failure_retries_then_rescue_without_entity(monkeypatch):
     """ارسال شکست بخورد → چند تلاش؛ در نهایت نجات محتوا بدون entity."""
-    monkeypatch.setattr(rmod, 'SEND_RETRY_DELAY_SECONDS', 0.0)
+    monkeypatch.setattr(rsvc, 'SEND_RETRY_DELAY_SECONDS', 0.0)
     manager, client, _ = make_manager()
     attempts = {'n': 0}
 
@@ -343,20 +351,25 @@ def test_send_failure_retries_then_rescue_without_entity(monkeypatch):
     verdict = run(manager.handle_outgoing(message))
     assert verdict == 'handled'
     assert attempts['n'] == 4                        # ۳ تلاش + ۱ نجات
-    assert client.deleted == [(CHAT_ID, [30])]       # اصل حذف شد (ترتیب مالک)
+    assert client.deleted == [(CHAT_ID, [30])]       # اصل بعد از ارسال موفق حذف شد
     assert manager.stats['failed'] == 0              # محتوا نجات یافت
 
 
-def test_total_send_failure_reported(monkeypatch):
-    """حتی نجات محتوا هم شکست بخورد → گزارش [ارسال دوباره] با شکست."""
-    monkeypatch.setattr(rmod, 'SEND_RETRY_DELAY_SECONDS', 0.0)
+def test_total_send_failure_keeps_original(monkeypatch):
+    """حتی نجات محتوا هم شکست بخورد → پیام اصلی دست‌نخورده + گزارش شکست.
+
+    spec v0.09.18: هیچ حذفی قبل از موفقیتِ ارسال انجام نمی‌شود؛ پس شکست
+    کامل ارسال یعنی پیام اصلی ساده و سالم سر جای خودش می‌ماند.
+    """
+    monkeypatch.setattr(rsvc, 'SEND_RETRY_DELAY_SECONDS', 0.0)
     manager, client, _ = make_manager()
     client.send_error = RuntimeError('network down')
     message = make_message('🔥 مهم', msg_id=33)
     verdict = run(manager.handle_outgoing(message))
     assert verdict == 'skipped'
     assert manager.stats['failed'] == 1
-    assert client.deleted == [(CHAT_ID, [33])]       # ترتیب مالک: حذف قبل ارسال
+    assert client.deleted == []                      # اصل حذف نشد (حفظ محتوا)
+    assert client.sends == []                        # هیچ نسخه‌ای ساخته نشد
 
 
 # ================================================== loop guards
@@ -390,7 +403,7 @@ def test_cooldown_blocks_resend(monkeypatch):
 
 # ================================================== album keep cases
 def test_album_with_entities_released_without_resend(monkeypatch):
-    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rsvc, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
     manager, client, _ = make_manager()
     custom = types.MessageEntityCustomEmoji(offset=0, length=2, document_id=FIRE)
     part1 = make_message('🔥 کپشن', msg_id=60, media=NS(m='p1'),
@@ -409,14 +422,14 @@ def test_album_with_entities_released_without_resend(monkeypatch):
 
 def test_album_not_resent_when_any_delete_fails(monkeypatch):
     """آلبوم: اگر حذف حتی یک قطعه شکست بخورد، آلبوم جدید ارسال نمی‌شود."""
-    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
+    monkeypatch.setattr(rsvc, 'ALBUM_FLUSH_DELAY_SECONDS', 0.05)
     manager, client, _ = make_manager()
     part1 = make_message('🔥 کپشن', msg_id=80, media=NS(m='p1'),
                          grouped_id='album-3')
     part2 = make_message('', msg_id=81, media=NS(m='p2'), grouped_id='album-3')
     calls = {'n': 0}
 
-    def flaky_delete(entity, message_ids, **kwargs):
+    async def flaky_delete(entity, message_ids, **kwargs):
         calls['n'] += 1
         if calls['n'] == 2:
             raise RuntimeError('no rights')
@@ -432,8 +445,11 @@ def test_album_not_resent_when_any_delete_fails(monkeypatch):
         await asyncio.sleep(0.2)
 
     run(scenario())
-    assert client.sends == []            # آلبوم جدید ارسال نشد (بدون تکرار)
-    assert calls['n'] == 2               # حذف ناقص؛ توقف
+    assert len(client.sends) == 1        # آلبوم جدید ارسال شد (قبل از حذف)
+    deleted_ids = sorted(mid for _, mids in client.deleted for mid in mids)
+    assert deleted_ids == [80]           # فقط قطعه اول حذف شد؛ قطعه دوم ماند
+    assert manager.stats['kept'] == 1    # گزارش حذف ناقص
+    assert manager.stats['resent'] == 1
 
 
 # ================================================== install / uninstall
@@ -532,7 +548,7 @@ def test_injector_full_flow_delete_and_new_send(monkeypatch):
     """پیام «رسیده از گوشی»: حذف + ارسال جدید؛ EditMessageRequest ممنوع."""
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_OUTGOING_FIX', True)
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
+    monkeypatch.setattr(rsvc, 'VERIFY_DELAY_SECONDS', 0.0)
     client = OfflineClient()
     account = NS(bot=False, premium=True, id=8359698350)
     engine = mod.install_premium_emoji_converter(
@@ -555,9 +571,9 @@ def test_injector_full_flow_delete_and_new_send(monkeypatch):
     assert custom_ids(sends[0].entities) == {FIRE}
     assert len(deletes) == 1                          # پیام اصلی حذف شد
     assert edits == []                                # edit مطلقاً انجام نشد
-    # ترتیب الزامی مالک: حذف قبل از ارسال
+    # ترتیب الزامی مالک (v0.09.18): ارسال قبل از حذف
     kinds = [type(r).__name__ for r in client.committed]
-    assert kinds.index('DeleteMessagesRequest') < kinds.index('SendMessageRequest')
+    assert kinds.index('SendMessageRequest') < kinds.index('DeleteMessagesRequest')
 
 
 def test_injector_without_manager_keeps_message_untouched(monkeypatch):

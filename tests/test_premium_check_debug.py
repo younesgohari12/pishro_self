@@ -21,6 +21,7 @@ import config
 import premium_emoji_mapping as mapping_module
 from services import premium_emoji_converter as mod
 from services import emoji_resend_manager as rmod
+from services import premium_resend_service as rsvc
 from services import telegram_logger as tlog
 
 FIRE = mapping_module.PREMIUM_EMOJI_MAP['🔥'][0]
@@ -145,8 +146,8 @@ def custom_ids(entities):
 @pytest.fixture(autouse=True)
 def _fast_and_silent(monkeypatch):
     """دور Debug بدون تأخیر واقعی و بدون صف تلگرام لاگر."""
-    monkeypatch.setattr(rmod, 'VERIFY_DELAY_SECONDS', 0.0)
-    monkeypatch.setattr(rmod, 'ALBUM_FLUSH_DELAY_SECONDS', 0.01)
+    monkeypatch.setattr(rsvc, 'VERIFY_DELAY_SECONDS', 0.0)
+    monkeypatch.setattr(rsvc, 'ALBUM_FLUSH_DELAY_SECONDS', 0.01)
     monkeypatch.setattr(config, 'PREMIUM_EMOJI_RESEND_MODE', True)
     monkeypatch.setattr(tlog, 'logging_enabled', lambda: False)
 
@@ -387,5 +388,5 @@ def test_verify_delay_constant_is_half_second():
     # fixture سرعت، مقدار ماژول را در زمان اجرا صفر می‌کند؛ مقدار spec از
     # سورس ماژول بررسی می‌شود (spec مالک: sleep 0.5s).
     import inspect
-    source = inspect.getsource(rmod)
+    source = inspect.getsource(rsvc)
     assert 'VERIFY_DELAY_SECONDS = 0.5' in source
