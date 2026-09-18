@@ -25,7 +25,16 @@
 set -uo pipefail
 
 # ----------------------------- تنظیمات -----------------------------
-TARGET_DIR="${PISHRO_TARGET:-/root/self/PishroSelf_v0.09.15_COMPLETE_20260918-005832/PishroSelf}"
+# هدف: اولویت با PISHRO_TARGET؛ سپس آرگومان اول (مسیر نسخه جدید)؛
+# در نبود هر دو، مسیر پیش‌فرض قدیمی استفاده می‌شود.
+#   مثال آپدیت بعدی:  bash migrate.sh /root/self/PishroSelf_v0.09.17_<ts>/PishroSelf
+TARGET_DIR="${PISHRO_TARGET:-}"
+if [ -z "$TARGET_DIR" ] && [ -n "${1:-}" ] && [ "${1:-}" != "--rollback" ]; then
+  TARGET_DIR="$1"
+fi
+if [ -z "$TARGET_DIR" ]; then
+  TARGET_DIR="/root/self/PishroSelf_v0.09.15_COMPLETE_20260918-005832/PishroSelf"
+fi
 DATA_DIR="${PISHRO_DATA:-/root/PishroSelfData}"
 SELF_DIR="${PISHRO_SELF_DIR:-/root/self}"
 SERVICE_NAME="${PISHRO_SERVICE:-selfbot}"

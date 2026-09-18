@@ -172,7 +172,27 @@ TABCHI_SEND_DELAY_SECONDS = 3
 TABCHI_SCHEDULER_INTERVAL = 60
 
 # ================================================== ۱۴) ساعت شناور
-CLOCK_FONTS = {}
+# فونت‌های ساعت پروفایل — بازسازی‌شده در v0.09.17 (تعریف‌های اصلی در بازنویسی
+# Loader از دست رفته بود و CLOCK_FONTS خالی باعث KeyError در منوی فونت و
+# clock_updater می‌شد). هر عضو: (نام نمایشی، تابع تبدیل «HH:MM»).
+def _clock_font_std(text):
+    return text
+
+
+_FA_DIGITS = str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹')
+_BOLD_DIGITS = str.maketrans('0123456789', '𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵')
+_MONO_DIGITS = str.maketrans('0123456789', '𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿')
+_DOUBLE_DIGITS = str.maketrans('0123456789', '𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡')
+_FULLWIDTH_MAP = str.maketrans('0123456789:', '０１２３４５６７８９：')
+
+CLOCK_FONTS = {
+    1: ('۱. استاندارد', _clock_font_std),
+    2: ('۲. فارسی', lambda t: str(t).translate(_FA_DIGITS)),
+    3: ('۳. بولد', lambda t: str(t).translate(_BOLD_DIGITS)),
+    4: ('۴. مونواسپیس', lambda t: str(t).translate(_MONO_DIGITS)),
+    5: ('۵. دولته', lambda t: str(t).translate(_DOUBLE_DIGITS)),
+    6: ('۶. فول‌ویدث', lambda t: str(t).translate(_FULLWIDTH_MAP)),
+}
 
 # ================================================== بارگذار تنظیمات پایدار
 # کلیدهایی که هرگز نباید از فایل پایدار بازنویسی شوند (مسیرها هویت معماری‌اند
@@ -180,6 +200,7 @@ CLOCK_FONTS = {}
 _NON_PERSISTENT_KEYS = frozenset({
     'BASE_DIR', 'DATA_DIR', 'DB_DIR', 'LOG_DIR', 'SESSIONS_DIR',
     'UPLOAD_DIR', 'MESSAGE_SAVE_CACHE_DIR', 'backup_dir', 'TEHRAN_TZ',
+    'CLOCK_FONTS',  # کد (تابع) نگه می‌دارد؛ هرگز از فایل پایدار بازنویسی نشود
 })
 
 # در پروسه تست هرگز فایل پایدار خوانده نمی‌شود (جداسازی کامل تست از دیتای واقعی).
@@ -282,8 +303,23 @@ _PERSISTENT_SEED_KEYS = (
 )
 
 
-def get_tehran_time():
-    return datetime.now(TEHRAN_TZ).time()
+def get_tehran_time(fmt=None):
+    """API پایدار زمان تهران — سازگار با هر دو سبک فراخوانی (backward compatible).
+
+    - get_tehran_time()            → datetime.time  (رفتار قدیمی؛ db.py / bot/core.py)
+    - get_tehran_time('%H:%M:%S')  → رشته فرمت‌شده  (inline.py / self.py — پنل و ساعت)
+    آرگومان غیر رشته‌ای (جز None) یک TypeError واضح می‌دهد تا خطای
+    «takes 0 positional arguments» دیگر هرگز رخ ندهد؛ برای شیء datetime
+    از get_tehran_datetime() استفاده کنید.
+    """
+    now = datetime.now(TEHRAN_TZ)
+    if fmt is None:
+        return now.time()
+    if isinstance(fmt, str):
+        return now.strftime(fmt)
+    raise TypeError(
+        'get_tehran_time() fmt must be a strftime string or None; '
+        'for datetime objects use get_tehran_datetime()')
 
 
 def get_tehran_datetime():
